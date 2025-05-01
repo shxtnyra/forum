@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: forum
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test_forum_db
+    username: postgres
+    password: 6792
+    driver-class-name: org.postgresql.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+#  security:
+#    user:
+#      name: sanya
+#      password: 12345
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  mvc:
+    favicon:
+      enabled: false
+
+server:
+  port: 8081
+
+jwt:
+  secret: dGhpcy1pcy1hLXNlY3JldC1rZXktZm9yLXRlc3Rpbmctb25seQ==dGhpcy1pcy1hLXNlY3JldC1rZXktZm9yLXRlc3Rpbmctb25seQ==
+  access:
+    #900000 10000
+    expiration: 9000000
+  refresh:
+    expiration: 2592000000
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.security.authentication: DEBUG
+    org.springframework.session: DEBUG
+    org.springframework.web: DEBUG
+    org:
+      springframework:
+        security:
+          web:
+            FilterChainProxy: DEBUG
