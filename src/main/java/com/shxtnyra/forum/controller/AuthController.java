@@ -1,10 +1,10 @@
 package com.shxtnyra.forum.controller;
 
-import com.shxtnyra.forum.dto.auth.AuthResponse;
-import com.shxtnyra.forum.dto.auth.RefreshTokenRequest;
-import com.shxtnyra.forum.dto.user.UserLoginDTO;
-import com.shxtnyra.forum.dto.user.UserProfileDTO;
-import com.shxtnyra.forum.dto.user.UserRegisterDTO;
+import com.shxtnyra.forum.dto.auth.AuthResponseDTO;
+import com.shxtnyra.forum.dto.auth.RefreshTokenRequestDTO;
+import com.shxtnyra.forum.dto.user.UserDetailsDTO;
+import com.shxtnyra.forum.dto.auth.LoginRequestDTO;
+import com.shxtnyra.forum.dto.auth.RegisterRequestDTO;
 import com.shxtnyra.forum.service.AuthService;
 import com.shxtnyra.forum.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,22 +22,22 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserProfileDTO> register(@RequestBody UserRegisterDTO dto) {
+    public ResponseEntity<UserDetailsDTO> register(@RequestBody RegisterRequestDTO dto) {
         return ResponseEntity.ok(userService.createUser(dto));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody UserLoginDTO dto) {
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO dto) {
         return ResponseEntity.ok(authService.authenticate(dto.getLoginOrEmail(), dto.getPassword()));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request){
+    public ResponseEntity<AuthResponseDTO> refresh(@RequestBody RefreshTokenRequestDTO request){
         return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequestDTO request) {
 
         authService.logout(request.getRefreshToken());
         return ResponseEntity.noContent().build();

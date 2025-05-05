@@ -1,7 +1,7 @@
 package com.shxtnyra.forum.controller;
 
-import com.shxtnyra.forum.dto.user.UserPreviewDTO;
-import com.shxtnyra.forum.dto.user.UserProfileDTO;
+import com.shxtnyra.forum.dto.user.UserShortDTO;
+import com.shxtnyra.forum.dto.user.UserDetailsDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.exception.exceptions.ValidationException;
@@ -35,22 +35,22 @@ public class UserController {
      * Получить список всех пользователей в виде List (без пагинации).
      * Используется для выпадающих списков и других сценариев, где нужен полный перечень.
      *
-     * @return List<UserPreviewDTO> список пользователей в сокращенном формате
+     * @return List<UserShortDTO> список пользователей в сокращенном формате
      */
     @GetMapping("/list")
-    public ResponseEntity<List<UserPreviewDTO>> getAllUsersList() {
+    public ResponseEntity<List<UserShortDTO>> getAllUsersList() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     /**
      * Получить страницу пользователей с пагинацией.
      *
-     * @return Page<UserPreviewDTO> страница пользователей с метаданными пагинации
+     * @return Page<UserShortDTO> страница пользователей с метаданными пагинации
      * @apiNote Размер страницы по умолчанию: 10 элементов. Для изменения параметров
      *          используйте query-параметры: ?page=0&size=20&sort=createdAt,desc
      */
     @GetMapping
-    public ResponseEntity<Page<UserPreviewDTO>> getAllUsersPage(Pageable pageable) {
+    public ResponseEntity<Page<UserShortDTO>> getAllUsersPage(Pageable pageable) {
         return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
@@ -58,11 +58,11 @@ public class UserController {
      * Получить профиль пользователя по ID.
      *
      * @param id идентификатор пользователя
-     * @return UserProfileDTO полные данные профиля
+     * @return UserDetailsDTO полные данные профиля
      * @throws EntityNotFoundException если пользователь не найден
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserProfileDTO> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDetailsDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
@@ -70,11 +70,11 @@ public class UserController {
      * Поиск пользователей по никнейму (регистронезависимый).
      *
      * @param nickname часть никнейма для поиска
-     * @return List<UserPreviewDTO> список подходящих пользователей
+     * @return List<UserShortDTO> список подходящих пользователей
      * @apiNote Минимальная длина запроса: 3 символа. Максимальное количество результатов: 20.
      */
     @GetMapping("/find")
-    public ResponseEntity<List<UserPreviewDTO>> findUserByNickname(
+    public ResponseEntity<List<UserShortDTO>> findUserByNickname(
             @RequestParam @Size(min = 3, max = 32) String nickname) {
         return ResponseEntity.ok(userService.findUsersByNickname(nickname));
     }
@@ -83,13 +83,13 @@ public class UserController {
      * Получить профиль текущего аутентифицированного пользователя.
      *
      * @param currentUser автоматически внедряемый объект пользователя из контекста безопасности
-     * @return UserProfileDTO полные данные профиля
+     * @return UserDetailsDTO полные данные профиля
      * @throws AuthenticationException если пользователь не аутентифицирован
      */
     @GetMapping("/me")
-    public ResponseEntity<UserProfileDTO> getMyProfile(
+    public ResponseEntity<UserDetailsDTO> getMyProfile(
             @AuthenticationPrincipal UserEntity currentUser) {
-        return ResponseEntity.ok(UserMapper.toProfileDTO(currentUser));
+        return ResponseEntity.ok(UserMapper.toDetailsDTO(currentUser));
     }
 
     /**
@@ -97,14 +97,14 @@ public class UserController {
      *
      * @param updateDto DTO с обновляемыми полями
      * @param currentUser аутентифицированный пользователь
-     * @return UserProfileDTO обновленный профиль
+     * @return UserDetailsDTO обновленный профиль
      * @throws ValidationException при невалидных данных
      * @implNote Поддерживает частичное обновление через PATCH.
      *           Нельзя изменить email и username после регистрации.
      */
     @PutMapping("/me")
-    public ResponseEntity<UserProfileDTO> updateMyProfile(
-            @Valid @RequestBody UserProfileDTO updateDto,
+    public ResponseEntity<UserDetailsDTO> updateMyProfile(
+            @Valid @RequestBody UserDetailsDTO updateDto,
             @AuthenticationPrincipal UserEntity currentUser) {
         return ResponseEntity.ok(
                 userService.updateUser(currentUser.getId(), updateDto)

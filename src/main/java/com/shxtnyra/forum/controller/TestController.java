@@ -1,14 +1,13 @@
 package com.shxtnyra.forum.controller;
 
 import com.shxtnyra.forum.config.JwtConfig;
-import com.shxtnyra.forum.dto.auth.AuthResponse;
-import com.shxtnyra.forum.dto.user.UserLoginDTO;
+import com.shxtnyra.forum.dto.auth.AuthResponseDTO;
+import com.shxtnyra.forum.dto.auth.LoginRequestDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.service.AuthService;
 import com.shxtnyra.forum.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -60,7 +59,7 @@ public class TestController {
 
     // Тестовые эндпоинты для регистрации/логина
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody UserLoginDTO dto) {
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO dto) {
         return ResponseEntity.ok(authService.authenticate(dto.getLoginOrEmail(), dto.getPassword()));
     }
 

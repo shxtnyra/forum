@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class UserProfileDTO {
+public class UserDetailsDTO {
     private final Long id;
     private final String name;
     private final String nickname;

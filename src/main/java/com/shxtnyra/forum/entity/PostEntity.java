@@ -32,6 +32,10 @@ public class PostEntity {
     @JoinColumn(name = "author_id", nullable = false)
     private UserEntity author;
 
+    @ManyToOne
+    @JoinColumn(nullable = false, name = "topic_id")
+    private TopicEntity topic;
+
     @Column(nullable = false, columnDefinition = "integer default 0 CHECK (view_count >= 0)")
     private int viewCount = 0;
 
