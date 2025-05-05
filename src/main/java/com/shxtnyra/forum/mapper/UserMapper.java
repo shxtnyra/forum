@@ -1,12 +1,12 @@
 package com.shxtnyra.forum.mapper;
 
-import com.shxtnyra.forum.dto.user.UserPreviewDTO;
-import com.shxtnyra.forum.dto.user.UserProfileDTO;
+import com.shxtnyra.forum.dto.user.UserDetailsDTO;
+import com.shxtnyra.forum.dto.user.UserShortDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 
 public class UserMapper {
-    public static UserPreviewDTO toPreviewDTO(UserEntity user) {
-        return UserPreviewDTO.builder()
+    public static UserShortDTO toShortDTO(UserEntity user) {
+        return UserShortDTO.builder()
                 .id(user.getId())
                 .nickname(user.getNickname())
                 .avatarUrl(user.getAvatarUrl())
@@ -14,8 +14,8 @@ public class UserMapper {
                 .build();
     }
 
-    public static UserProfileDTO toProfileDTO(UserEntity user) {
-        return UserProfileDTO.builder()
+    public static UserDetailsDTO toDetailsDTO(UserEntity user) {
+        return UserDetailsDTO.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .nickname(user.getNickname())

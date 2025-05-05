@@ -3,7 +3,6 @@ package com.shxtnyra.forum.dto.auth;
 import lombok.Data;
 
 @Data
-public class AuthResponse {
-    private final String accessToken;
+public class RefreshTokenRequestDTO {
     private final String refreshToken;
 }

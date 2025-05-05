@@ -1,4 +1,4 @@
-package com.shxtnyra.forum.dto.user;
+package com.shxtnyra.forum.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -7,7 +7,7 @@ import lombok.*;
 
 @Data
 @Builder
-public class UserRegisterDTO {
+public class RegisterRequestDTO {
     @NotBlank
     @Size(max = 32, min = 4)
     private final String username;

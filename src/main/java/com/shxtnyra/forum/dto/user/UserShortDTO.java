@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class UserPreviewDTO {
+public class UserShortDTO {
     private final Long id;
     private final String nickname;
     private final String avatarUrl;

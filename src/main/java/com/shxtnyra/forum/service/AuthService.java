@@ -1,7 +1,7 @@
 package com.shxtnyra.forum.service;
 
 import com.shxtnyra.forum.config.JwtConfig;
-import com.shxtnyra.forum.dto.auth.AuthResponse;
+import com.shxtnyra.forum.dto.auth.AuthResponseDTO;
 import com.shxtnyra.forum.entity.RefreshTokenEntity;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
@@ -25,7 +25,7 @@ public class AuthService {
     private final JwtConfig jwtConfig;
 
     @Transactional
-    public AuthResponse authenticate(String usernameOrEmail, String password) {
+    public AuthResponseDTO authenticate(String usernameOrEmail, String password) {
 //        UserEntity user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
 //                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 //
@@ -40,11 +40,11 @@ public class AuthService {
         String accessToken = jwtConfig.generateToken((UserEntity) authentication.getPrincipal());
         RefreshTokenEntity refreshToken = createRefreshToken((UserEntity) authentication.getPrincipal());
 
-        return new AuthResponse(accessToken, refreshToken.getToken());
+        return new AuthResponseDTO(accessToken, refreshToken.getToken());
     }
 
     @Transactional
-    public AuthResponse refreshToken(String refreshToken){
+    public AuthResponseDTO refreshToken(String refreshToken){
         RefreshTokenEntity oldRefreshToken = refreshTokenRepository
                 .findByToken(refreshToken)
                 .orElseThrow(() -> new EntityNotFoundException("RefreshToken not found: " + refreshToken));
@@ -54,7 +54,7 @@ public class AuthService {
         String accessToken = jwtConfig.generateToken(oldRefreshToken.getUser());
         RefreshTokenEntity newRefreshToken = createRefreshToken(oldRefreshToken.getUser());
 
-        return new AuthResponse(accessToken, newRefreshToken.getToken());
+        return new AuthResponseDTO(accessToken, newRefreshToken.getToken());
     }
 
     @Transactional

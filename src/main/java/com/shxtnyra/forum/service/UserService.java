@@ -1,5 +1,6 @@
 package com.shxtnyra.forum.service;
 
+import com.shxtnyra.forum.dto.auth.RegisterRequestDTO;
 import com.shxtnyra.forum.dto.user.*;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.enums.Role;
@@ -25,73 +26,72 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserProfileDTO createUser(UserRegisterDTO dto) {
+    public UserDetailsDTO createUser(RegisterRequestDTO request) {
         System.out.println("Попал в сервис createUser");
 
-        if (userRepository.existsByUsername(dto.getUsername())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
 
-        if (userRepository.existsByEmail(dto.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
 
         UserEntity user = UserEntity.builder()
-                .username(dto.getUsername())
-                .email(dto.getEmail())
-                .password(passwordEncoder.encode(dto.getPassword()))
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
                 .profileDescription("")
                 .role(Role.ROLE_USER)
                 .rating(0)
                 .build();
 
         user = userRepository.save(user);
-        return UserMapper.toProfileDTO(user);
+        return UserMapper.toDetailsDTO(user);
     }
 
-    public UserProfileDTO getUserById(Long id) {
+    public UserDetailsDTO getUserById(Long id) {
         System.out.println("Попал в сервис getUserById");
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
-        return UserMapper.toProfileDTO(user);
+        return UserMapper.toDetailsDTO(user);
     }
 
     // Оставлю пока для дебага
-    public List<UserPreviewDTO> getAllUsers() {
+    public List<UserShortDTO> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserMapper::toPreviewDTO)
+                .map(UserMapper::toShortDTO)
                 .toList();
     }
 
     // для админов
-    public Page<UserPreviewDTO> getAllUsers(Pageable pageable) {
+    public Page<UserShortDTO> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable)
-                .map(UserMapper::toPreviewDTO);
+                .map(UserMapper::toShortDTO);
     }
 
     // Поиск по нику, надо совместить с поиском по имени и где больше совпадение
-    public List<UserPreviewDTO> findUsersByNickname(String nickname) {
+    public List<UserShortDTO> findUsersByNickname(String nickname) {
         return userRepository.findByNicknameContainingIgnoreCase(nickname)
                 .stream()
-                .map(UserMapper::toPreviewDTO)
+                .map(UserMapper::toShortDTO)
                 .toList();
     }
 
-    public List<UserPreviewDTO> getTopRatingUsers() {
+    public List<UserShortDTO> getTopRatingUsers() {
         return userRepository.findTop50ByOrderByRatingDesc().stream()
-                .map(UserMapper::toPreviewDTO)
+                .map(UserMapper::toShortDTO)
                 .toList();
     }
 
     @Transactional
-    public UserProfileDTO updateUser(Long id, UserProfileDTO dto) {
+    public UserDetailsDTO updateUser(Long id, UserDetailsDTO dto) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
 
         if (dto.getNickname() != null && !dto.getNickname().equals(user.getNickname())) {
             if (userRepository.existsByNickname(dto.getNickname())) {
-                throw new RuntimeException();
-                //throw new NicknameAlreadyExistsException("Nickname already in use");
+                throw new IllegalArgumentException("Username already exists");
             }
             user.setNickname(dto.getNickname());
         }
@@ -101,7 +101,7 @@ public class UserService implements UserDetailsService {
         user.setAvatarUrl(dto.getAvatarURL());
 
         user = userRepository.save(user);
-        return UserMapper.toProfileDTO(user);
+        return UserMapper.toDetailsDTO(user);
     }
 
     @Transactional
@@ -117,6 +117,4 @@ public class UserService implements UserDetailsService {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
-
-
 }
