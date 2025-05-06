@@ -36,8 +36,8 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @EntityGraph(attributePaths = {"topic", "author"})
     @Query("""
-        SELECT p FROM PostEntity p 
-        JOIN p.topic t 
+        SELECT p FROM PostEntity p
+        JOIN p.topic t
         WHERE t.slug = :topicSlug
         ORDER BY p.createdAt DESC
         """)
