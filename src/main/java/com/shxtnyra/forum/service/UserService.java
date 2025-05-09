@@ -1,12 +1,18 @@
 package com.shxtnyra.forum.service;
 
 import com.shxtnyra.forum.dto.auth.RegisterRequestDTO;
-import com.shxtnyra.forum.dto.user.*;
+import com.shxtnyra.forum.dto.confirmationToken.ConfirmationTokenDetailsDTO;
+import com.shxtnyra.forum.dto.user.UserDetailsDTO;
+import com.shxtnyra.forum.dto.user.UserShortDTO;
+import com.shxtnyra.forum.entity.ConfirmationTokenEntity;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.enums.Role;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
+import com.shxtnyra.forum.mapper.ConfirmationTokenMapper;
 import com.shxtnyra.forum.mapper.UserMapper;
+import com.shxtnyra.forum.repository.ConfirmationTokenRepository;
 import com.shxtnyra.forum.repository.UserRepository;
+import com.shxtnyra.forum.service.interfaces.EmailSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,23 +23,49 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ConfirmationTokenRepository confirmationTokenRepository;
+    private final EmailSender emailSender;
 
     @Transactional
     public UserDetailsDTO createUser(RegisterRequestDTO request) {
         System.out.println("Попал в сервис createUser");
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
-        }
+        // Если пользователь с таким именем уже есть, но с другой почтой
+        userRepository.findByUsername(request.getUsername())
+                .ifPresent(userEntity -> {
+                    if (!userEntity.getEmail().equals(request.getEmail())) {
+                        throw new IllegalArgumentException("Username already exists");
+                    }
+                });
 
+        // Если уже есть аккаунт с такой почтой
         if (userRepository.existsByEmail(request.getEmail())) {
+            UserEntity existingUser = userRepository.findByEmail(request.getEmail());
+
+            // Если уже подтвержденный
+            if (existingUser.isConfirmed()) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+
+            // TODO возможно нужно что-то с паролем делать
+            // Если не подтвержден и вводимые данные совпадают, то отправляем повторно письмо
+            if (existingUser.getUsername().equals(request.getUsername())) {
+                // Предыдущие токены ставим недействительными
+                confirmationTokenRepository.setExpired(LocalDateTime.now().minusHours(1), existingUser);
+
+                emailSender.send(existingUser.getEmail(), EmailService.buildEmail(existingUser.getUsername(), createConfirmationToken(existingUser)));
+                return UserMapper.toDetailsDTO(existingUser);
+            }
+
             throw new IllegalArgumentException("Email already exists");
         }
 
@@ -47,7 +79,46 @@ public class UserService implements UserDetailsService {
                 .build();
 
         user = userRepository.save(user);
+
+        emailSender.send(request.getEmail(), EmailService.buildEmail(request.getUsername(), createConfirmationToken(user)));
+
         return UserMapper.toDetailsDTO(user);
+    }
+
+    // Создание токена
+    public String createConfirmationToken(UserEntity user) {
+        String token = UUID.randomUUID().toString();
+        ConfirmationTokenEntity confirmationToken = ConfirmationTokenEntity.builder()
+                .token(token)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusMinutes(15)) // TODO: сделать из файла конфигурации время?
+                .user(user)
+                .build();
+        confirmationTokenRepository.save(confirmationToken);
+
+        return "http://localhost:8081/api/auth/confirm?token=" + token;
+    }
+
+    // Подтверждение токена активации
+    @Transactional
+    public ConfirmationTokenDetailsDTO confirmToken(String token) {
+        ConfirmationTokenEntity confirmationToken = confirmationTokenRepository
+                .findByToken(token)
+                .orElseThrow(() -> new EntityNotFoundException("token not found"));
+
+        if (confirmationToken.getConfirmedAt() != null) {
+            throw new IllegalArgumentException("email already confirmed");
+        }
+
+        if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("token expired");
+        }
+
+        // Ставим токен активированным и активируем аккаунт
+        confirmationTokenRepository.setConfirmed(token, LocalDateTime.now());
+        userRepository.confirmUserEmail(confirmationToken.getUser().getEmail());
+
+        return ConfirmationTokenMapper.toDetailsDTO(confirmationToken);
     }
 
     public UserDetailsDTO getUserById(Long id) {

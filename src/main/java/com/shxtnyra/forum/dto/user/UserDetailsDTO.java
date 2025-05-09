@@ -18,4 +18,5 @@ public class UserDetailsDTO {
     private final LocalDateTime lastActivity;
     private final int rating;
     private final Role role;
+    private final boolean isConfirmed;
 }
