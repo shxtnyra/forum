@@ -12,4 +12,7 @@ public class CommentShortDTO {
     private final Long id;
     private final LocalDateTime createdAt;
     private final UserShortDTO author;
+    private final Long postId;
+    private final int level;
+    private final Long parentId;
 }

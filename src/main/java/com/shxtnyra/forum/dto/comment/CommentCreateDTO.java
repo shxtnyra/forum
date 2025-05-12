@@ -1,7 +1,7 @@
 package com.shxtnyra.forum.dto.comment;
 
-import com.shxtnyra.forum.dto.post.PostShortDTO;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,8 +9,8 @@ import lombok.Data;
 @Builder
 public class CommentCreateDTO {
     @NotBlank
-    private final String content;
-    @NotBlank
-    private final PostShortDTO post;
-    private final CommentShortDTO parent;
+    private final String text;
+    @NotNull
+    private final Long postId;
+    private final Long parentId;
 }

@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,57 +24,42 @@ import java.util.List;
 public class CommentController {
     private final CommentService commentService;
 
-    @PostMapping
-    @PreAuthorize("isAuthenticated")
-    public ResponseEntity<CommentDetailsDTO> createComment(@RequestBody @Valid CommentCreateDTO dto,
-                                                           @AuthenticationPrincipal UserEntity user) {
+    @PostMapping("/add")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<CommentShortDTO> createComment(@RequestBody @Valid CommentCreateDTO dto,
+                                                         @AuthenticationPrincipal UserEntity user) {
         return ResponseEntity.ok(commentService.createComment(dto, user));
     }
 
-    // Получить комментарий
-    @GetMapping
+    // Получить все комментарии под постом
+    @GetMapping("/post/{id}")
+    public ResponseEntity<List<CommentShortDTO>> getAllCommentsByPost(@PathVariable Long id) {
+        return ResponseEntity.ok(commentService.getCommentsByPost(id));
+    }
+
+    // Получить все ответы на комментарий
+    @GetMapping("/parent/{id}")
+    public ResponseEntity<List<CommentShortDTO>> getCommentsByParent(@PathVariable Long id) {
+        return ResponseEntity.ok(commentService.getCommentsByParent(id));
+    }
+
+    @GetMapping("/user/{id}")
+    public ResponseEntity<Page<CommentShortDTO>> getCommentsByAuthor(
+            @PathVariable Long id,
+            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(commentService.getCommentsByAuthor(id, pageable));
+    }
+
+    // TODO спорный эндпоинт
+    @GetMapping("/{id}")
     public ResponseEntity<CommentDetailsDTO> getCommentById(@PathVariable Long id) {
         return ResponseEntity.ok(commentService.getCommentById(id));
     }
 
-    // Получить все комментарии под постом
-    @GetMapping
-    public ResponseEntity<Page<CommentShortDTO>> getAllComments(@PathVariable Long id,
-                                                                Pageable pageable) {
-        return ResponseEntity.ok(commentService.getAllComments(id, pageable));
-    }
-
-    // Получить все ответы на комментарий
-    @GetMapping
-    public ResponseEntity<Page<CommentShortDTO>> getAllReplies(@PathVariable Long id,
-                                                               Pageable pageable) {
-        return ResponseEntity.ok(commentService.getAllReplies(id, pageable));
-    }
-
-    // Получить комментарии по подстроке
-    @GetMapping
-    public ResponseEntity<List<CommentShortDTO>> getCommentsByText(String text) {
-        return ResponseEntity.ok(commentService.getCommentsByText(text));
-    }
-
-    // Увеличить счетчик лайков
-    @GetMapping
-    public ResponseEntity<Void> incrementLikes(@PathVariable Long id,
-                                               @AuthenticationPrincipal UserEntity user) {
-        commentService.incrementLikes(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    // Увеличить счетчик дизлайков
-    @GetMapping
-    public ResponseEntity<Void> incrementDislikes(@PathVariable Long id,
-                                                  @AuthenticationPrincipal UserEntity user) {
-        commentService.incrementDislikes(id);
-        return ResponseEntity.noContent().build();
-    }
-
     // Удалить комментарий
-    @DeleteMapping
+    // TODO Сделать мягкое удаление, но это когда всеми удалениями займусь
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id,
                                               @AuthenticationPrincipal UserEntity user) {
         commentService.deleteComment(id);

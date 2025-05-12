@@ -4,9 +4,11 @@ import com.shxtnyra.forum.dto.comment.CommentCreateDTO;
 import com.shxtnyra.forum.dto.comment.CommentDetailsDTO;
 import com.shxtnyra.forum.dto.comment.CommentShortDTO;
 import com.shxtnyra.forum.entity.CommentEntity;
+import com.shxtnyra.forum.entity.PostEntity;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.mapper.CommentMapper;
+import com.shxtnyra.forum.repository.PostRepository;
 import com.shxtnyra.forum.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import com.shxtnyra.forum.repository.CommentRepository;
@@ -21,86 +23,79 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
     private final UserRepository userRepository;
 
-    // Создание
     @Transactional
-    public CommentDetailsDTO createComment(CommentCreateDTO createDTO, UserEntity user) {
+    public CommentShortDTO createComment(CommentCreateDTO createDTO, UserEntity user) {
+        if (!postRepository.existsById(createDTO.getPostId()))
+            throw new EntityNotFoundException("такого поста нету");
+
+        CommentEntity parentComment = null;
+        int level = 0;
+
+        if (createDTO.getParentId() != null) {
+            CommentRepository.ParentInfo parentInfo  = commentRepository.findParentInfoById(createDTO.getParentId())
+                    .orElseThrow(() -> new EntityNotFoundException("Такого комментария нету"));
+
+            if (!createDTO.getPostId().equals(parentInfo.getPostId()))
+                throw new IllegalArgumentException("Указанный пост и пост комментария для ответа расходятся");
+
+            // Создаем прокси для родительского комментария
+            parentComment = CommentEntity.builder().id(createDTO.getParentId()).build();
+            level = parentInfo.getLevel() + 1;
+        }
 
         CommentEntity comment = CommentEntity.builder()
-                .content(createDTO.getContent())
+                .text(createDTO.getText())
                 .author(user)
+                .post(PostEntity.builder().id(createDTO.getPostId()).build()) // прокси объект поста
+                .parent(parentComment)
+                .level(level)
                 .build();
         comment = commentRepository.save(comment);
 
-        return CommentMapper.toDetailsDTO(comment);
+        return CommentMapper.toShortDTO(comment);
     }
 
     // Получение комментария
     @Transactional
     public CommentDetailsDTO getCommentById(Long id) {
         CommentEntity comment = commentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Comment not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
         return CommentMapper.toDetailsDTO(comment);
     }
 
-    // Получение всех комментариев к посту
-    public Page<CommentShortDTO> getAllComments(Long id, Pageable pageable) {
-        if (!commentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Comment not found");
-        }
+    // TODO добавить сортировку
+    public List<CommentShortDTO> getCommentsByPost(Long postId){
+        if (!postRepository.existsById(postId))
+            throw new EntityNotFoundException("Пост не найден");
 
-        return commentRepository.findByPostId(id, pageable)
-                .map(CommentMapper::toShortDTO);
-    }
-
-    // Получение всех ответов на комментарий
-    public Page<CommentShortDTO> getAllReplies(Long id, Pageable pageable) {
-        if (!commentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Comment not found");
-        }
-
-        return commentRepository.findByParentId(id, pageable)
-                .map(CommentMapper::toShortDTO);
-    }
-
-    // Получение всех комментариев конкретного пользователя
-    public Page<CommentShortDTO> getCommentsByAuthor(Long id, Pageable pageable) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found");
-        }
-
-        return commentRepository.findByAuthorId(id, pageable)
-                .map(CommentMapper::toShortDTO);
-    }
-
-    // Получение комментариев с подстрокой
-    public List<CommentShortDTO> getCommentsByText(String text) {
-        return commentRepository.findByTextContainingIgnoreCase(text)
+        return commentRepository.findByPostId(postId)
                 .stream()
                 .map(CommentMapper::toShortDTO)
                 .toList();
     }
 
-    // Изменение счетчиков оценок
-    public void incrementLikes(Long id) {
-        if (!commentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Comment not found");
-        }
+    public List<CommentShortDTO> getCommentsByParent(Long parentId){
+        CommentEntity comment = commentRepository.findById(parentId)
+                .orElseThrow(() -> new EntityNotFoundException("Нету такого коммента"));
 
-        commentRepository.incrementLikes(id);
+        return comment.getReplies().
+                stream().map(CommentMapper::toShortDTO)
+                .toList();
     }
 
-    public void incrementDislikes(Long id) {
-        if (!commentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Comment not found");
-        }
+    public Page<CommentShortDTO> getCommentsByAuthor(Long authorId, Pageable pageable){
+        if (!userRepository.existsById(authorId))
+            throw new EntityNotFoundException("Комментарий не найден");
 
-        commentRepository.incrementDislikes(id);
+        return commentRepository.findByAuthorId(authorId, pageable)
+                .map(CommentMapper::toShortDTO);
     }
 
-    // Удаление комментария
+    // TODO переработать на мягкое удаление
     public void deleteComment(Long id) {
         if (!commentRepository.existsById(id)) {
             throw new EntityNotFoundException("Comment not found");

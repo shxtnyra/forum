@@ -67,6 +67,8 @@ public class  SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/posts").hasAnyRole("USER", "MODERATOR", "ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/comments/add").authenticated()
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/moderation/**").hasAnyRole("MODERATOR", "ADMIN")
