@@ -1,4 +1,4 @@
-package com.shxtnyra.forum.dto.post;
+package com.shxtnyra.forum.dto.comment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,10 +7,10 @@ import lombok.Data;
 
 @Data
 @Builder
-public class PostCreateDTO {
-    private final String title;
+public class CommentCreateDTO {
     @NotBlank
-    private final String content;
+    private final String text;
     @NotNull
-    private final Long topicId;
+    private final Long postId;
+    private final Long parentId;
 }

@@ -6,11 +6,11 @@ import com.shxtnyra.forum.dto.post.PostShortDTO;
 import com.shxtnyra.forum.entity.PostEntity;
 import com.shxtnyra.forum.entity.TopicEntity;
 import com.shxtnyra.forum.entity.UserEntity;
+import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.mapper.PostMapper;
 import com.shxtnyra.forum.repository.PostRepository;
 import com.shxtnyra.forum.repository.TopicRepository;
 import com.shxtnyra.forum.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,12 +30,14 @@ public class PostService {
     // Create
     @Transactional
     public PostDetailsDTO createPost(PostCreateDTO createDTO, UserEntity user) {
-//        UserEntity author = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        TopicEntity topic = topicRepository.findById(createDTO.getTopicId())
+                .orElseThrow(() -> new EntityNotFoundException("Такая тема не найдена"));
 
         PostEntity post = PostEntity.builder()
                 .title(createDTO.getTitle())
                 .content(createDTO.getContent())
+                .topic(topic)
                 .author(user)
                 .build();
 
