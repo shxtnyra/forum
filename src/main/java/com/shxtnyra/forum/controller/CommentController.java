@@ -7,10 +7,6 @@ import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,50 +15,45 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/comments")
+@RequestMapping("/v1/posts/{postId}/comments")
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
 
-    @PostMapping("/add")
+    @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CommentShortDTO> createComment(@RequestBody @Valid CommentCreateDTO dto,
-                                                         @AuthenticationPrincipal UserEntity user) {
+    public ResponseEntity<CommentShortDTO> createComment(
+            @PathVariable Long postId,
+            @RequestBody @Valid CommentCreateDTO dto,
+            @AuthenticationPrincipal UserEntity user) {
         return ResponseEntity.ok(commentService.createComment(dto, user));
     }
 
-    // Получить все комментарии под постом
-    @GetMapping("/post/{id}")
-    public ResponseEntity<List<CommentShortDTO>> getAllCommentsByPost(@PathVariable Long id) {
-        return ResponseEntity.ok(commentService.getCommentsByPost(id));
+    @GetMapping
+    public ResponseEntity<List<CommentShortDTO>> getCommentsByPost(@PathVariable Long postId) {
+        return ResponseEntity.ok(commentService.getCommentsByPost(postId));
     }
 
-    // Получить все ответы на комментарий
-    @GetMapping("/parent/{id}")
-    public ResponseEntity<List<CommentShortDTO>> getCommentsByParent(@PathVariable Long id) {
-        return ResponseEntity.ok(commentService.getCommentsByParent(id));
+    @GetMapping("/{commentId}/replies")
+    public ResponseEntity<List<CommentShortDTO>> getCommentReplies(
+            @PathVariable Long postId,
+            @PathVariable Long commentId) {
+        return ResponseEntity.ok(commentService.getCommentsByParent(commentId));
     }
 
-    @GetMapping("/user/{id}")
-    public ResponseEntity<Page<CommentShortDTO>> getCommentsByAuthor(
-            @PathVariable Long id,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        return ResponseEntity.ok(commentService.getCommentsByAuthor(id, pageable));
+    @GetMapping("/{commentId}")
+    public ResponseEntity<CommentDetailsDTO> getCommentById(
+            @PathVariable Long postId,
+            @PathVariable Long commentId) {
+        return ResponseEntity.ok(commentService.getCommentById(commentId));
     }
 
-    // TODO спорный эндпоинт
-    @GetMapping("/{id}")
-    public ResponseEntity<CommentDetailsDTO> getCommentById(@PathVariable Long id) {
-        return ResponseEntity.ok(commentService.getCommentById(id));
-    }
-
-    // Удалить комментарий
-    // TODO Сделать мягкое удаление, но это когда всеми удалениями займусь
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long id,
-                                              @AuthenticationPrincipal UserEntity user) {
-        commentService.deleteComment(id);
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable Long postId,
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserEntity user) {
+        commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();
     }
 }

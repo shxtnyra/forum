@@ -7,7 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/posts/{postId}/rating")
+@RequestMapping("/v1/posts/{postId}")
 @RequiredArgsConstructor
 public class PostRatingController {
     private final PostRatingService postRatingService;
@@ -22,13 +22,5 @@ public class PostRatingController {
     public void dislikePost(@PathVariable Long postId,
                             @AuthenticationPrincipal UserEntity user) {
         postRatingService.ratePost(postId, user, false);
-    }
-
-    @GetMapping
-    public String getUserRating(@PathVariable Long postId,
-                                @AuthenticationPrincipal UserEntity user) {
-        return postRatingService.getUserRating(postId, user)
-                .map(isLike -> isLike ? "like" : "dislike")
-                .orElse("none");
     }
 }

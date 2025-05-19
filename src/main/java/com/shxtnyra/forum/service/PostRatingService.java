@@ -6,84 +6,84 @@ import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.repository.PostRatingRepository;
 import com.shxtnyra.forum.repository.PostRepository;
+import com.shxtnyra.forum.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class PostRatingService {
     private final PostRatingRepository postRatingRepository;
     private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private static final double POST_RATING_VALUE = 1.0;
+    private static final double POST_RATING_DOUBLE_VALUE = POST_RATING_VALUE * 2;
+
 
     @Transactional
     public void ratePost(Long postId, UserEntity user, boolean isLike) {
-        PostEntity post = postRepository.findById(postId)
+        Long authorId = postRepository.findAuthorIdById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
-        Optional<PostRatingEntity> existingRating = postRatingRepository.findByPostAndUser(post, user);
+        postRatingRepository.findByPostIdAndUserId(postId, user.getId()).ifPresentOrElse(
+                rating -> handleExistingRating(postId, authorId, rating, isLike),
+                () -> createNewRating(postId, authorId, user, isLike)
+        );
+    }
 
-        if (existingRating.isPresent()){
-            if (existingRating.get().isLike() == isLike){
-                removeRating(post, existingRating.get());
-            }else {
-                updateRating(post, existingRating.get(), isLike);
-            }
-
-        }else {
-            addNewRating(post, user, isLike);
+    private void handleExistingRating(Long postId, Long authorId,
+                                      PostRatingEntity rating, boolean newIsLike) {
+        if (rating.isLike() == newIsLike) {
+            removeRating(postId, authorId, rating);
+        } else {
+            updateRating(postId, authorId, rating, newIsLike);
         }
     }
 
-    private void addNewRating(PostEntity post, UserEntity user, boolean isLike) {
-        PostRatingEntity rating = PostRatingEntity.builder()
-                .post(post)
-                .user(user)
-                .isLike(isLike)
-                .build();
-        postRatingRepository.save(rating);
+    private void createNewRating(Long postId, Long authorId, UserEntity user, boolean isLike) {
+        postRatingRepository.save(
+                PostRatingEntity.builder()
+                        .post(PostEntity.builder().id(postId).build())
+                        .user(user)
+                        .isLike(isLike)
+                        .createdAt(LocalDateTime.now())
+                        .build()
+        );
 
-        // так как транзакция изменения сохранятся
         if (isLike) {
-            post.setLikeCount(post.getLikeCount() + 1);
+            postRepository.incrementLikeCount(postId, 1);
+            userRepository.incrementTotalRating(authorId, POST_RATING_VALUE);
         } else {
-            post.setDislikeCount(post.getDislikeCount() + 1);
+            postRepository.incrementDislikeCount(postId, 1);
+            userRepository.incrementTotalRating(authorId, -POST_RATING_VALUE);
         }
     }
 
-    private void updateRating(PostEntity post, PostRatingEntity rating, boolean newIsLike) {
-        // Уменьшаем старый счетчик
-        if (rating.isLike()) {
-            post.setLikeCount(post.getLikeCount() - 1);
-        } else {
-            post.setDislikeCount(post.getDislikeCount() - 1);
-        }
-
-        // Меняем оценку
-        rating.setLike(newIsLike);
-
-        // Увеличиваем новый счетчик
+    private void updateRating(Long postId, Long authorId,
+                              PostRatingEntity rating, boolean newIsLike) {
         if (newIsLike) {
-            post.setLikeCount(post.getLikeCount() + 1);
+            postRepository.updateRatingCounters(postId, 1, -1);
+            userRepository.incrementTotalRating(authorId, POST_RATING_DOUBLE_VALUE);
         } else {
-            post.setDislikeCount(post.getDislikeCount() + 1);
+            postRepository.updateRatingCounters(postId, -1, 1);
+            userRepository.incrementTotalRating(authorId, -POST_RATING_DOUBLE_VALUE);
         }
+
+        // Установка новой оценки
+        rating.setLike(newIsLike);
     }
 
-    private void removeRating(PostEntity post, PostRatingEntity rating) {
+    private void removeRating(Long postId, Long authorId, PostRatingEntity rating) {
         if (rating.isLike()) {
-            post.setLikeCount(post.getLikeCount() - 1);
+            postRepository.incrementLikeCount(postId, -1);
+            userRepository.incrementTotalRating(authorId, -POST_RATING_VALUE);
         } else {
-            post.setDislikeCount(post.getDislikeCount() - 1);
+            postRepository.incrementDislikeCount(postId, -1);
+            userRepository.incrementTotalRating(authorId, POST_RATING_VALUE);
         }
-
         postRatingRepository.delete(rating);
-    }
-
-    public Optional<Boolean> getUserRating(Long postId, UserEntity user) {
-        return postRatingRepository.findByPostIdAndUser(postId, user)
-                .map(PostRatingEntity::isLike);
     }
 }

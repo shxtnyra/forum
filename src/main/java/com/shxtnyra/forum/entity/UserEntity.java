@@ -77,8 +77,11 @@ public class UserEntity implements UserDetails {
     @Column(name = "registration_date", updatable = false ,nullable = false)
     private LocalDateTime registrationDate;
 
-    @Column(name = "rating", nullable = false)
-    private int rating = 0;
+    @Column(name = "total_rating", nullable = false)
+    private double totalRating = 0;
+
+    @Column(name = "weekly_rating", nullable = false)
+    private double weeklyRating = 0;
 
     @Column(name = "last_activity")
     private LocalDateTime lastActivity;

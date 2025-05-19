@@ -10,7 +10,7 @@ public class UserMapper {
                 .id(user.getId())
                 .nickname(user.getNickname())
                 .avatarUrl(user.getAvatarUrl())
-                .rating(user.getRating())
+                .totalRating(user.getTotalRating())
                 .build();
     }
 
@@ -23,7 +23,7 @@ public class UserMapper {
                 .avatarURL(user.getAvatarUrl())
                 .createAt(user.getRegistrationDate())
                 .lastActivity(user.getLastActivity())
-                .rating(user.getRating())
+                .totalRating(user.getTotalRating())
                 .role(user.getRole())
                 .build();
     }

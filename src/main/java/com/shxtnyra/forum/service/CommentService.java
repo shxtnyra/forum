@@ -35,6 +35,7 @@ public class CommentService {
         int level = 0;
 
         if (createDTO.getParentId() != null) {
+            // Используем проекцию что бы не подтянуть лишнего
             CommentRepository.ParentInfo parentInfo  = commentRepository.findParentInfoById(createDTO.getParentId())
                     .orElseThrow(() -> new EntityNotFoundException("Такого комментария нету"));
 
