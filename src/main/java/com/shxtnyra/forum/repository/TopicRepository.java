@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface TopicRepository extends JpaRepository<TopicEntity, Long> {
     Optional<TopicEntity> findBySlug(String slug);
     boolean existsBySlug(String slug);
+
+    Long findIdBySlug(String topicSlug);
 }

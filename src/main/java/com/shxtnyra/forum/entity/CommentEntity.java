@@ -45,6 +45,15 @@ public class CommentEntity {
     @Column(name = "level")
     private int level = 0;
 
+    @Column(name = "like_count", nullable = false)
+    private int likeCount = 0;
+
+    @Column(name = "dislike_count", nullable = false)
+    private int dislikeCount = 0;
+
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommentRatingEntity> ratings = new ArrayList<>();
+
     // Автоматическое проставление дат
     @PrePersist
     protected void onCreate() {

@@ -43,7 +43,8 @@ public class UserService implements UserDetailsService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .profileDescription("")
                 .role(Role.ROLE_USER)
-                .rating(0)
+                .totalRating(0)
+                .weeklyRating(0)
                 .build();
 
         user = userRepository.save(user);
@@ -70,16 +71,17 @@ public class UserService implements UserDetailsService {
                 .map(UserMapper::toShortDTO);
     }
 
-    // Поиск по нику, надо совместить с поиском по имени и где больше совпадение
-    public List<UserShortDTO> findUsersByNickname(String nickname) {
-        return userRepository.findByNicknameContainingIgnoreCase(nickname)
+    public List<UserShortDTO> getTopRatingUsers(){
+        return userRepository.findTop50ByOrderByTotalRatingDesc()
                 .stream()
                 .map(UserMapper::toShortDTO)
                 .toList();
     }
 
-    public List<UserShortDTO> getTopRatingUsers() {
-        return userRepository.findTop50ByOrderByRatingDesc().stream()
+    // Поиск по нику, надо совместить с поиском по имени и где больше совпадение
+    public List<UserShortDTO> findUsersByNickname(String nickname) {
+        return userRepository.findByNicknameContainingIgnoreCase(nickname)
+                .stream()
                 .map(UserMapper::toShortDTO)
                 .toList();
     }

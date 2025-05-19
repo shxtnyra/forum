@@ -10,10 +10,7 @@ import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.mapper.PostMapper;
 import com.shxtnyra.forum.repository.PostRepository;
 import com.shxtnyra.forum.repository.TopicRepository;
-import com.shxtnyra.forum.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,9 +22,7 @@ import java.time.LocalDateTime;
 public class PostService {
     private final PostRepository postRepository;
     private final TopicRepository topicRepository;
-    private final UserRepository userRepository;
 
-    // Create
     @Transactional
     public PostDetailsDTO createPost(PostCreateDTO createDTO, UserEntity user) {
 
@@ -56,45 +51,52 @@ public class PostService {
         return PostMapper.toDetailsDTO(post);
     }
 
-    // Получение всех постов
-    public Page<PostShortDTO> getAllPosts(Pageable pageable) {
-        return postRepository.findAll(pageable)
-                .map(PostMapper::toShortDTO);
-    }
+    public Slice<PostShortDTO> getNewsFeed(Long lastSeenId, String topicSlug,
+                                           String period, String sort,
+                                           int limit) {
 
-    // Получение всех постов для ленты
-    public Slice<PostShortDTO> getNewsFeed(Long lastSeenId, Pageable pageable) {
-        Slice<PostEntity> posts = postRepository.findForNewsFeed(lastSeenId, pageable);
-        return posts.map(PostMapper::toShortDTO);
-    }
-
-    // Получение всех постов конкретного автора
-    public Page<PostShortDTO> getPostsByAuthor(Long authorId, Pageable pageable) {
-        return postRepository.findByAuthorId(authorId, pageable)
-                .map(PostMapper::toShortDTO);
-    }
-
-    // TODO Заменить на получение постов з определённый промежуток времени
-    public Page<PostDetailsDTO> getTodayPosts(Pageable pageable) {
-        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-        return postRepository.findTodayPosts(startOfDay, pageable)
-                .map(PostMapper::toDetailsDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostShortDTO> getPostsByTopic(
-            String topicSlug,
-            Pageable pageable
-    ) {
-//        TopicEntity topic = topicRepository.findBySlug(topicSlug)
-//                .orElseThrow(() -> new EntityNotFoundException("Topic not found"));
-
-        if (!topicRepository.existsBySlug(topicSlug)) {
-            throw new EntityNotFoundException("Topic not found");
+        // Валидация темы
+        if (topicSlug != null && !topicRepository.existsBySlug(topicSlug)) {
+            throw new IllegalArgumentException("Topic not found");
         }
 
-        return postRepository.findByTopicSlug(topicSlug, pageable)
-                .map(PostMapper::toShortDTO);
+        // Определяем период
+        LocalDateTime periodStart = null;
+        if (period != null) {
+            periodStart = switch (period) {
+                case "day" -> LocalDateTime.now().minusDays(1);
+                case "week" -> LocalDateTime.now().minusWeeks(1);
+                case "month" -> LocalDateTime.now().minusMonths(1);
+                default -> throw new IllegalArgumentException("Invalid period");
+            };
+        }
+
+        Long topicId = null;
+        if (topicSlug != null) {
+            topicId = topicRepository.findIdBySlug(topicSlug);
+            if (topicId == null) {
+                throw new IllegalArgumentException("Topic not found");
+            }
+        }
+
+        // Выбираем подходящий метод репозитория в зависимости от параметров
+        Slice<PostEntity> posts;
+        if (topicId != null){
+            if ("top".equals(sort)){
+                posts = postRepository.findTopPostsByPeriodAndTopic(lastSeenId, periodStart, topicId, limit);
+            }else {
+                posts = postRepository.findNewestPostsByTopic(lastSeenId, topicId, limit);
+            }
+        }else {
+            if ("top".equals(sort)){
+                posts = postRepository.findTopPostsByPeriod(lastSeenId, periodStart, limit);
+            }
+            else {
+                posts = postRepository.findNewestPosts(lastSeenId, limit);
+            }
+        }
+
+        return posts.map(PostMapper::toShortDTO);
     }
 
     // Обновление пока put, надо ещё path добавить будет
@@ -107,9 +109,5 @@ public class PostService {
         post.setContent(dto.getContent());
 
         return PostMapper.toDetailsDTO(post);
-    }
-
-    public void deletePost(Long id) {
-        postRepository.deleteById(id);
     }
 }

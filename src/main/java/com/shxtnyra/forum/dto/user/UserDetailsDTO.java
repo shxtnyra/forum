@@ -16,6 +16,6 @@ public class UserDetailsDTO {
     private final String avatarURL;
     private final LocalDateTime createAt;
     private final LocalDateTime lastActivity;
-    private final int rating;
+    private final double totalRating;
     private final Role role;
 }

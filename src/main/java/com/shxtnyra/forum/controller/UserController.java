@@ -1,5 +1,7 @@
 package com.shxtnyra.forum.controller;
 
+import com.shxtnyra.forum.dto.comment.CommentDetailsDTO;
+import com.shxtnyra.forum.dto.comment.CommentShortDTO;
 import com.shxtnyra.forum.dto.user.UserShortDTO;
 import com.shxtnyra.forum.dto.user.UserDetailsDTO;
 import com.shxtnyra.forum.entity.UserEntity;
@@ -7,13 +9,17 @@ import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
 import com.shxtnyra.forum.exception.exceptions.ValidationException;
 import com.shxtnyra.forum.mapper.UserMapper;
 import com.shxtnyra.forum.service.AuthService;
+import com.shxtnyra.forum.service.CommentService;
+import com.shxtnyra.forum.service.UserRatingService;
 import com.shxtnyra.forum.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.method.P;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +32,11 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/users")
+@RequestMapping("v1/users")
 public class UserController {
     private final UserService userService;
     private final AuthService authService;
+    private final CommentService commentService;
 
     /**
      * Получить список всех пользователей в виде List (без пагинации).
@@ -54,6 +61,11 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
+    @GetMapping("/top")
+    public ResponseEntity<List<UserShortDTO>> getTopRatingUsers(){
+        return ResponseEntity.ok(userService.getTopRatingUsers());
+    }
+
     /**
      * Получить профиль пользователя по ID.
      *
@@ -64,6 +76,12 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDetailsDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
+    }
+
+    @GetMapping("/{userId}/comments")
+    public ResponseEntity<Page<CommentShortDTO>> getCommentsByUser(@PathVariable Long id,
+                                                                   @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(commentService.getCommentsByAuthor(id, pageable));
     }
 
     /**
