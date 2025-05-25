@@ -1,8 +1,8 @@
 package com.shxtnyra.forum.repository;
 
+import com.shxtnyra.forum.entity.CommentEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.shxtnyra.forum.entity.CommentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +20,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
      */
     interface ParentInfo {
         Long getPostId();
+
         int getLevel();
     }
 
@@ -44,10 +45,12 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     void incrementDislikeCount(@Param("commentId") Long commentId, @Param("increment") int increment);
 
     @Modifying
-    @Query("UPDATE CommentEntity c SET " +
-            "c.likeCount = c.likeCount + :likeDelta, " +
-            "c.dislikeCount = c.dislikeCount + :dislikeDelta " +
-            "WHERE c.id = :postId")
+    @Query("""
+            UPDATE CommentEntity c SET
+            c.likeCount = c.likeCount + :likeDelta,
+            c.dislikeCount = c.dislikeCount + :dislikeDelta
+            WHERE c.id = :postId
+            """)
     void updateRatingCounters(@Param("commentId") Long commentId,
                               @Param("likeDelta") int likeDelta,
                               @Param("dislikeDelta") int dislikeDelta);
