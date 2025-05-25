@@ -13,4 +13,9 @@ public class PostShortDTO {
     private final String title;
     private final LocalDateTime createAt;
     private final UserShortDTO author;
+    private final String previewContent;
+    private final String coverImageUrl;
+    private final int viewCount;
+    private final int likeCount;
+    private final int dislikeCount;
 }

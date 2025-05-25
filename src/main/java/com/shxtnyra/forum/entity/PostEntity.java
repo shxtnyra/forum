@@ -1,5 +1,6 @@
 package com.shxtnyra.forum.entity;
 
+import com.shxtnyra.forum.enums.PostStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,16 +20,23 @@ public class PostEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 200)
     private String title;
 
-    // Пока так будет надо разобраться как хранить
+    @Column(columnDefinition = "TEXT")
     private String content;
+
+    @Column(columnDefinition = "TEXT")
+    private String previewContent;
 
     @Column(name = "created_at", updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
@@ -56,11 +64,38 @@ public class PostEntity {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean deleted = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
-    @Column(columnDefinition = "boolean default true")
-    private boolean draft = true;
+    private PostStatus status = PostStatus.DRAFT;
 
-    // Автоматическое проставление дат
+    @Column(length = 500)
+    private String coverImageUrl;
+
+    @ManyToMany
+    @JoinTable(
+        name = "post_tags",
+        joinColumns = @JoinColumn(name = "post_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    private Set<TagEntity> tags = new HashSet<>();
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isPinned = false;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isPromoted = false;
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isEditorChoice = false;
+
+    @Column(length = 200)
+    private String metaDescription;
+
+    @Column(length = 200)
+    private String metaKeywords;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
