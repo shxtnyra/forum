@@ -25,6 +25,12 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByUsername(String username);
     Optional<UserEntity> findByUsernameOrEmail(String username, String email);
+    UserEntity findByEmail(String email);
+
+    // Подтверждение почты
+    @Modifying
+    @Query("UPDATE UserEntity u SET u.isConfirmed = TRUE WHERE u.email =?1")
+    void confirmUserEmail(String email);
 
     boolean existsByNickname(String nickname);
     boolean existsByUsername(String username);

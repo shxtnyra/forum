@@ -25,6 +25,7 @@ public class UserMapper {
                 .lastActivity(user.getLastActivity())
                 .totalRating(user.getTotalRating())
                 .role(user.getRole())
+                .isConfirmed(user.isConfirmed())
                 .build();
     }
 }

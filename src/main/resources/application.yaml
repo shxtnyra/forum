@@ -13,6 +13,24 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
 
+  mail:
+    host: localhost
+    port: 1025
+    username: hello
+    password: hello
+
+    properties:
+      mail:
+        smtp:
+          ssl:
+            trust: "*"
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 3000
+          writetimeout: 5000
+
 #  security:
 #    user:
 #      name: sanya
