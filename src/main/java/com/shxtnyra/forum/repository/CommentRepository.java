@@ -27,11 +27,42 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     @Query("SELECT c.post.id as postId, c.level as level FROM CommentEntity c WHERE c.id = :commentId")
     Optional<ParentInfo> findParentInfoById(@Param("commentId") Long commentId);
 
-    // Все комментарии к посту
-    List<CommentEntity> findByPostId(Long postId);
+    // Является удаленным или нет
+    @Query("SELECT c.deleted FROM CommentEntity c WHERE c.id = :commentId")
+    boolean isDeletedById(@Param("commentId") Long commentId);
 
-    // Комментарии пользователя
+    // Пост по айди комментария
+    @Query("SELECT c.post.id FROM CommentEntity c WHERE c.id = :commentId")
+    Long findPostByCommentId(@Param("commentId") Long commentId);
+
+    // Все комментарии к посту
+    @Query("SELECT c FROM CommentEntity c WHERE c.post.id = :postId AND c.deleted = false")
+    List<CommentEntity> findByPostId(@Param("postId") Long postId);
+
+    // Комментарии пользователя видимые для всех
+    @Query("""
+            SELECT c FROM CommentEntity c
+            WHERE c.author.id = :authorId
+            AND c.deleted = false
+            AND c.post.deleted = false
+            AND c.post.draft = false
+            AND c.post.invisible= false
+            """)
     Page<CommentEntity> findByAuthorId(Long authorId, Pageable pageable);
+
+    // Комментарии пользователя с учетом видимости постов и удаленных комментариев
+    @Query("""
+            SELECT c FROM CommentEntity c
+            WHERE c.author.id = :authorId
+            AND ((:includeInvisible = true) OR
+                (c.deleted = false
+                AND c.post.deleted = false
+                AND c.post.draft = false
+                AND c.post.invisible = false))
+            """)
+    Page<CommentEntity> findByAuthorByVisibility(@Param("authorId") Long authorId,
+                                                 @Param("includeInvisible") boolean includeInvisible,
+                                                 Pageable pageable);
 
     @Query("SELECT c.author.id FROM CommentEntity c WHERE c.id = :id")
     Optional<Long> findAuthorIdById(@Param("id") Long id);

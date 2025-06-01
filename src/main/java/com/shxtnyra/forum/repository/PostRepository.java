@@ -109,14 +109,19 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("""
             SELECT p FROM PostEntity p
             WHERE p.author.id = :userId
-            AND p.invisible = :isInvisible
+            AND p.invisible = :includeInvisible
             AND p.deleted = false
             AND p.draft = false
             """)
-    Page<PostEntity> getPostsByUserByVisibility(Long userId, boolean isInvisible, Pageable pageable);
+    Page<PostEntity> getPostsByUserByVisibility(@Param("userId") Long userId,
+                                                @Param("includeInvisible") boolean includeInvisible,
+                                                Pageable pageable);
 
     @Query("SELECT p FROM PostEntity p WHERE p.author.id = :userId AND p.deleted = true")
     Page<PostEntity> getDeletedPostsByUser(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT (p.invisible OR p.deleted OR p.draft) FROM PostEntity p WHERE p.id = :postId")
+    boolean hasAnyFlagById(@Param("postId") Long postId);
 
     @Query("""
             SELECT p FROM PostEntity p

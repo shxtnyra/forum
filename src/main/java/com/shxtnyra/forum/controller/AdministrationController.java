@@ -1,8 +1,10 @@
 package com.shxtnyra.forum.controller;
 
+import com.shxtnyra.forum.dto.comment.CommentShortDTO;
 import com.shxtnyra.forum.dto.post.PostShortDTO;
 import com.shxtnyra.forum.dto.topic.TopicCreateDTO;
 import com.shxtnyra.forum.dto.topic.TopicDetailsDTO;
+import com.shxtnyra.forum.service.CommentService;
 import com.shxtnyra.forum.service.PostService;
 import com.shxtnyra.forum.service.TopicService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdministrationController {
     private final TopicService topicService;
     private final PostService postService;
+    private final CommentService commentService;
 
     // === Topic Management ===
     @PreAuthorize("hasAnyRole('ADMIN')")
@@ -87,5 +90,29 @@ public class AdministrationController {
     public ResponseEntity<Void> recoverPost(@PathVariable Long postId) {
         postService.recoverPost(postId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteCommentSoft(
+            @PathVariable Long commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @PatchMapping("/comments/{commentId}/recover")
+    public ResponseEntity<Void> recoverComment(@PathVariable Long commentId) {
+        commentService.recoverComment(commentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Получить комментарии одного пользователя (под обычными постами либо вместе со скрытыми/удаленными)
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/users/{userId}/comments")
+    public ResponseEntity<Page<CommentShortDTO>> getCommentsByAuthor(@PathVariable Long userId,
+                                                                     @RequestParam boolean includeInvisible,
+                                                                     @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(commentService.getCommentsByAuthorByVisibility(userId, includeInvisible, pageable));
     }
 }

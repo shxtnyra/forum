@@ -12,7 +12,7 @@ public class CommentMapper {
                 .createdAt(comment.getCreatedAt())
                 .author(UserMapper.toShortDTO(comment.getAuthor()))
                 .post(PostMapper.toShortDTO(comment.getPost()))
-                .parent(CommentMapper.toShortDTO(comment.getParent()))
+                .parent(comment.getParent() != null ? CommentMapper.toShortDTO(comment.getParent()) : null)
                 .build();
     }
 

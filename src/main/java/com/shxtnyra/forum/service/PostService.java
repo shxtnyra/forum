@@ -164,12 +164,12 @@ public class PostService {
     }
 
     // Получить посты одного пользователя (простые посты либо вместе со скрытыми)
-    public Page<PostShortDTO> getPostsByUserByVisibility(Long userId, boolean isInvisible, Pageable pageable) {
+    public Page<PostShortDTO> getPostsByUserByVisibility(Long userId, boolean includeInvisible, Pageable pageable) {
         if (!userRepository.existsById(userId)) {
             throw new EntityNotFoundException("User not found");
         }
 
-        return postRepository.getPostsByUserByVisibility(userId, isInvisible, pageable).map(PostMapper::toShortDTO);
+        return postRepository.getPostsByUserByVisibility(userId, includeInvisible, pageable).map(PostMapper::toShortDTO);
     }
 
     // Изменение видимости поста
@@ -232,6 +232,11 @@ public class PostService {
 
         // Выложить может только автор
         if (!post.getAuthor().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        // Нельзя выложить удаленное
+        if (post.isDeleted()) {
             throw new AccessDeniedException("Access denied");
         }
 
