@@ -1,8 +1,6 @@
 package com.shxtnyra.forum.controller;
 
-import com.shxtnyra.forum.dto.post.PostCreateDTO;
-import com.shxtnyra.forum.dto.post.PostDetailsDTO;
-import com.shxtnyra.forum.dto.post.PostShortDTO;
+import com.shxtnyra.forum.dto.post.*;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.service.PostService;
 import jakarta.validation.Valid;
@@ -18,68 +16,183 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Контроллер для управления постами.
+ * Предоставляет REST API для создания, обновления, удаления и получения постов,
+ * а также для работы с черновиками и поиска.
+ */
 @RestController
 @RequestMapping("/v1/posts")
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
 
-    @PostMapping("/drafts")
+    /**
+     * Создает новый пост.
+     * Требуется аутентификация пользователя.
+     *
+     * @param dto данные для создания поста
+     * @param user текущий пользователь
+     * @return созданный пост
+     */
+    @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PostDetailsDTO> createDraft(
+    public ResponseEntity<PostDetailsDTO> createPost(
             @RequestBody @Valid PostCreateDTO dto,
             @AuthenticationPrincipal UserEntity user) {
         return ResponseEntity.ok(postService.createPost(dto, user));
     }
 
+    /**
+     * Создает новый черновик.
+     * Требуется аутентификация пользователя.
+     *
+     * @param dto данные для создания черновика
+     * @param user текущий пользователь
+     * @return созданный черновик
+     */
+    @PostMapping("/drafts")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostDetailsDTO> createDraft(
+            @RequestBody @Valid PostCreateDTO dto,
+            @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(postService.createDraft(dto, user));
+    }
+
+    /**
+     * Обновляет существующий черновик.
+     * Требуется аутентификация пользователя.
+     *
+     * @param id ID черновика
+     * @param dto новые данные
+     * @param user текущий пользователь
+     * @return обновленный черновик
+     */
     @PatchMapping("/drafts/{id}")
-    public ResponseEntity<Void> editDraft(@PathVariable Long id,
-                                          @RequestBody @Valid PostCreateDTO dto,
-                                          @AuthenticationPrincipal UserEntity user) {
-        postService.editDraft(id, dto, user);
-        return ResponseEntity.noContent().build();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostDetailsDTO> updateDraft(
+            @PathVariable Long id,
+            @RequestBody @Valid PostCreateDTO dto,
+            @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(postService.updateDraft(id, dto, user));
     }
 
-    @PatchMapping("/drafts/{id}/release")
-    public ResponseEntity<PostDetailsDTO> releasePost(@PathVariable Long id,
-                                                      @AuthenticationPrincipal UserEntity user) {
-        ;
-        return ResponseEntity.ok(postService.releasePost(id, user));
+    /**
+     * Публикует черновик.
+     * Требуется аутентификация пользователя.
+     *
+     * @param id ID черновика
+     * @param user текущий пользователь
+     * @return опубликованный пост
+     */
+    @PatchMapping("/drafts/{id}/publish")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PostDetailsDTO> publishDraft(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(postService.publishDraft(id, user));
     }
 
+    /**
+     * Получает черновики текущего пользователя.
+     * Требуется аутентификация пользователя.
+     *
+     * @param user текущий пользователь
+     * @param pageable параметры пагинации
+     * @return страница черновиков
+     */
     @GetMapping("/drafts")
-    public ResponseEntity<Page<PostShortDTO>> getDraftPosts(@AuthenticationPrincipal UserEntity user,
-                                                            @PageableDefault Pageable pageable) {
-        return ResponseEntity.ok(postService.getDrafts(user, pageable));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<PostShortDTO>> getUserDrafts(
+            @AuthenticationPrincipal UserEntity user,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(postService.getUserDrafts(user, pageable));
     }
 
+    /**
+     * Получает пост по ID.
+     * Доступно всем пользователям.
+     *
+     * @param id ID поста
+     * @param currentUserId ID текущего пользователя (может быть null)
+     * @return найденный пост
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<PostDetailsDTO> getPostById(@PathVariable Long id,
-                                                      @AuthenticationPrincipal UserEntity user) {
-        return ResponseEntity.ok(postService.getPostById(id, user));
+    public ResponseEntity<PostDetailsDTO> getPost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal(expression = "id") Long currentUserId) {
+        return ResponseEntity.ok(postService.getPost(id, currentUserId));
     }
 
-    @GetMapping()
-    public ResponseEntity<Slice<PostShortDTO>> getPostFeed(
+    /**
+     * Получает ленту постов.
+     * Поддерживает фильтрацию по теме, периоду и сортировку.
+     * Доступно всем пользователям.
+     *
+     * @param lastSeenId ID последнего просмотренного поста
+     * @param topicId ID темы для фильтрации
+     * @param period период времени (hour, day, week, month, year, all)
+     * @param sort тип сортировки (new, top, hot, best)
+     * @param limit максимальное количество постов (макс. 50)
+     * @param includeDrafts включать ли черновики
+     * @return срез постов
+     */
+    @GetMapping("/feed")
+    public ResponseEntity<Slice<PostShortDTO>> getFeed(
             @RequestParam(required = false) Long lastSeenId,
-            @RequestParam(required = false) String topic,
-            @RequestParam(required = false, defaultValue = "day") String period,
-            @RequestParam(required = false, defaultValue = "top") String sort,
-            @RequestParam(required = false, defaultValue = "10") int limit
-    ) {
+            @RequestParam(required = false) Long topicId,
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "false") boolean includeDrafts) {
+        
+        validateFeedParams(period, sort, limit);
+        
+        return ResponseEntity.ok(postService.getFeed(
+            lastSeenId,
+            topicId,
+            period,
+            sort,
+            limit,
+            includeDrafts
+        ));
+    }
 
-        // Валидация параметров
-        if (limit > 20)
-            limit = 20;
-
-        if (period != null && !List.of("day", "week", "month").contains(period)) {
+    /**
+     * Проверяет корректность параметров для получения ленты.
+     *
+     * @param period период времени
+     * @param sort тип сортировки
+     * @param limit максимальное количество постов
+     * @throws IllegalArgumentException если параметры некорректны
+     */
+    private void validateFeedParams(String period, String sort, int limit) {
+        if (limit > 50) limit = 50;
+        
+        if (period != null && !List.of("hour", "day", "week", "month", "year", "all").contains(period)) {
             throw new IllegalArgumentException("Invalid period value");
         }
-
-        if (sort != null && !List.of("newest", "top").contains(sort)) {
+        
+        if (sort != null && !List.of("new", "top", "hot", "best").contains(sort)) {
             throw new IllegalArgumentException("Invalid sort value");
         }
+    }
 
-        return ResponseEntity.ok(postService.getNewsFeed(lastSeenId, topic, period, sort, limit));
+    /**
+     * Ищет посты по заголовку.
+     * Поддерживает фильтрацию по теме.
+     * Доступно всем пользователям.
+     *
+     * @param query поисковый запрос
+     * @param topicId ID темы для фильтрации
+     * @param pageable параметры пагинации
+     * @return страница найденных постов
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<PostShortDTO>> searchPosts(
+            @RequestParam String query,
+            @RequestParam(required = false) Long topicId,
+            @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(postService.searchPosts(query, topicId, pageable));
     }
 }
