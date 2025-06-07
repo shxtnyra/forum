@@ -12,7 +12,6 @@ public class TopicMapper {
                 .description(entity.getDescription())
                 .slug(entity.getSlug())
                 .previewUrl(entity.getPreviewUrl())
-                .isPinned(entity.isPinned())
                 .build();
     }
 

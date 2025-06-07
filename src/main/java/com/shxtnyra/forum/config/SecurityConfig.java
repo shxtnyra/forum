@@ -47,31 +47,31 @@ public class  SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/v1/auth/**").permitAll()
                         // Users
                         .requestMatchers(
-                                "/api/users/me**"  // Все /me/... пути требуют авторизации
+                                "/v1/users/me**"  // Все /me/... пути требуют авторизации
                         ).authenticated()
                         .requestMatchers(
-                                "/api/users/list",
-                                "/api/users",
-                                "/api/users/{id}",
-                                "/api/users/find"
+                                "/v1/users/list",
+                                "/v1/users",
+                                "/v1/users/{id}",
+                                "/v1/users/find"
                         ).permitAll()
 
                         // Test
-                        .requestMatchers("/api/test/public").permitAll()
-                        .requestMatchers("api/test/authenticated").authenticated()
-                        .requestMatchers("/api/test/moderator").hasRole("MODERATOR")
+                        .requestMatchers("/v1/test/public").permitAll()
+                        .requestMatchers("v1/test/authenticated").authenticated()
+                        .requestMatchers("/v1/test/moderator").hasRole("MODERATOR")
 
-                        .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/posts").hasAnyRole("USER", "MODERATOR", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/v1/posts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/posts").hasAnyRole("USER", "MODERATOR", "ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/comments/add").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/v1/comments/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/comments/add").authenticated()
 
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/moderation/**").hasAnyRole("MODERATOR", "ADMIN")
+                        .requestMatchers("/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/v1/moderation/**").hasAnyRole("MODERATOR", "ADMIN")
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -28,7 +28,6 @@ public class TopicService {
                 .name(topicDTO.getName())
                 .slug(topicDTO.getSlug())
                 .description(topicDTO.getDescription())
-                .pinned(false)
                 .build();
 
         topic = topicRepository.save(topic);
