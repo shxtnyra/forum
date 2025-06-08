@@ -25,8 +25,18 @@ public class PostRatingService {
 
     @Transactional
     public void ratePost(Long postId, UserEntity user, boolean isLike) {
-        Long authorId = postRepository.findAuthorIdById(postId)
+        PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
+
+        Long authorId = post.getAuthor().getId();
+
+        if (user.getId().equals(authorId)) {
+            throw new IllegalStateException("Нельзя оценивать себя");
+        }
+
+        if (post.isInvisible() || post.isDraft() || post.isDeleted()) {
+            throw new IllegalStateException("Нельзя оценить этот пост");
+        }
 
         postRatingRepository.findByPostIdAndUserId(postId, user.getId()).ifPresentOrElse(
                 rating -> handleExistingRating(postId, authorId, rating, isLike),
