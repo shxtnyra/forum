@@ -50,6 +50,16 @@ public class PostEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<PostRatingEntity> ratings = new HashSet<>();
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean invisible = false;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean deleted = false;
+
+    @Builder.Default
+    @Column(columnDefinition = "boolean default true")
+    private boolean draft = true;
+
     // Автоматическое проставление дат
     @PrePersist
     protected void onCreate() {

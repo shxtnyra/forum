@@ -30,30 +30,25 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CommentShortDTO>> getCommentsByPost(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getCommentsByPost(postId));
+    public ResponseEntity<List<CommentShortDTO>> getCommentsByPost(@PathVariable Long postId,
+                                                                   @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(commentService.getCommentsByPost(postId, user));
     }
 
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<List<CommentShortDTO>> getCommentReplies(
             @PathVariable Long postId,
-            @PathVariable Long commentId) {
-        return ResponseEntity.ok(commentService.getCommentsByParent(commentId));
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(commentService.getCommentsByParent(commentId, user));
     }
 
     @GetMapping("/{commentId}")
     public ResponseEntity<CommentDetailsDTO> getCommentById(
             @PathVariable Long postId,
-            @PathVariable Long commentId) {
-        return ResponseEntity.ok(commentService.getCommentById(commentId));
-    }
-
-    @DeleteMapping("/{commentId}")
-    public ResponseEntity<Void> deleteComment(
-            @PathVariable Long postId,
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserEntity user) {
-        commentService.deleteComment(commentId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(commentService.getCommentById(commentId, user));
     }
+
 }

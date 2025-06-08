@@ -1,6 +1,7 @@
 package com.shxtnyra.forum.repository;
 
 import com.shxtnyra.forum.entity.PostEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,10 +14,15 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
     // 1. Топ постов за период (все темы)
-    @Query("SELECT p FROM PostEntity p " +
-            "WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId) " +
-            "AND p.createdAt >= :periodStart " +
-            "ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC")
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
+            AND p.createdAt >= :periodStart
+            AND p.invisible = false
+            AND p.deleted = false
+            AND p.draft = false
+            ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC
+            """)
     Slice<PostEntity> findTopPostsByPeriod(
             @Param("lastSeenId") Long lastSeenId,
             @Param("periodStart") LocalDateTime periodStart,
@@ -24,11 +30,16 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     );
 
     // 2. Топ постов за период по теме (по topicId)
-    @Query("SELECT p FROM PostEntity p " +
-            "WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId) " +
-            "AND p.topic.id = :topicId " +  // Используем ID темы
-            "AND p.createdAt >= :periodStart " +
-            "ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC")
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
+            AND p.topic.id = :topicId
+            AND p.createdAt >= :periodStart
+            AND p.invisible = false
+            AND p.deleted = false
+            AND p.draft = false
+            ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC
+            """)
     Slice<PostEntity> findTopPostsByPeriodAndTopic(
             @Param("lastSeenId") Long lastSeenId,
             @Param("periodStart") LocalDateTime periodStart,
@@ -37,19 +48,29 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     );
 
     // 3. Свежие посты (все темы)
-    @Query("SELECT p FROM PostEntity p " +
-            "WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId) " +
-            "ORDER BY p.id DESC")
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
+            AND p.invisible = false
+            AND p.deleted = false
+            AND p.draft = false
+            ORDER BY p.id DESC
+            """)
     Slice<PostEntity> findNewestPosts(
             @Param("lastSeenId") Long lastSeenId,
             @Param("limit") int limit
     );
 
     // 4. Свежие посты по теме (по topicId)
-    @Query("SELECT p FROM PostEntity p " +
-            "WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId) " +
-            "AND p.topic.id = :topicId " +
-            "ORDER BY p.id DESC")
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
+            AND p.topic.id = :topicId
+            AND p.invisible = false
+            AND p.deleted = false
+            AND p.draft = false
+            ORDER BY p.id DESC
+            """)
     Slice<PostEntity> findNewestPostsByTopic(
             @Param("lastSeenId") Long lastSeenId,
             @Param("topicId") Long topicId,
@@ -72,11 +93,44 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     void incrementDislikeCount(@Param("postId") Long postId, @Param("increment") int increment);
 
     @Modifying
-    @Query("UPDATE PostEntity p SET " +
-            "p.likeCount = p.likeCount + :likeDelta, " +
-            "p.dislikeCount = p.dislikeCount + :dislikeDelta " +
-            "WHERE p.id = :postId")
+    @Query("""
+            UPDATE PostEntity p SET
+            p.likeCount = p.likeCount + :likeDelta,
+            p.dislikeCount = p.dislikeCount + :dislikeDelta
+            WHERE p.id = :postId
+            """)
     void updateRatingCounters(@Param("postId") Long postId,
                               @Param("likeDelta") int likeDelta,
                               @Param("dislikeDelta") int dislikeDelta);
+
+    @Query("SELECT p FROM PostEntity p WHERE p.invisible = true AND p.deleted = false")
+    Page<PostEntity> getInvisiblePosts(Pageable pageable);
+
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE p.author.id = :userId
+            AND p.invisible = :includeInvisible
+            AND p.deleted = false
+            AND p.draft = false
+            """)
+    Page<PostEntity> getPostsByUserByVisibility(@Param("userId") Long userId,
+                                                @Param("includeInvisible") boolean includeInvisible,
+                                                Pageable pageable);
+
+    @Query("SELECT p FROM PostEntity p WHERE p.author.id = :userId AND p.deleted = true")
+    Page<PostEntity> getDeletedPostsByUser(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT (p.invisible OR p.deleted OR p.draft) FROM PostEntity p WHERE p.id = :postId")
+    boolean hasAnyFlagById(@Param("postId") Long postId);
+
+    @Query("""
+            SELECT p FROM PostEntity p
+            WHERE p.author.id = :authorId
+            AND p.draft = true
+            AND p.deleted = false
+            """)
+    Page<PostEntity> getDraftPosts(@Param("authorId") Long authorId, Pageable pageable);
+
+    @Query("SELECT p FROM PostEntity p WHERE p.author.id = :authorId AND p.draft = true")
+    Page<PostEntity> getDraftsByUserId(@Param("authorId") Long authorId, Pageable pageable);
 }

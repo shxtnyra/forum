@@ -54,6 +54,9 @@ public class CommentEntity {
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentRatingEntity> ratings = new ArrayList<>();
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean deleted = false;
+
     // Автоматическое проставление дат
     @PrePersist
     protected void onCreate() {
