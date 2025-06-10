@@ -70,7 +70,7 @@ public class  SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/comments/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/v1/comments/add").authenticated()
 
-                        .requestMatchers("/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/v1/administration/**").hasAnyRole("ADMIN", "MODERATOR")
                         .requestMatchers("/v1/moderation/**").hasAnyRole("MODERATOR", "ADMIN")
                         .anyRequest().permitAll()
                 )

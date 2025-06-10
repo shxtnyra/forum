@@ -2,15 +2,19 @@ package com.shxtnyra.forum.controller;
 
 import com.shxtnyra.forum.dto.comment.CommentShortDTO;
 import com.shxtnyra.forum.dto.post.PostShortDTO;
+import com.shxtnyra.forum.dto.report.ReportCommentDTO;
+import com.shxtnyra.forum.dto.report.ReportPostDTO;
+import com.shxtnyra.forum.dto.report.ReportUserDTO;
 import com.shxtnyra.forum.dto.topic.TopicCreateDTO;
 import com.shxtnyra.forum.dto.topic.TopicDetailsDTO;
+import com.shxtnyra.forum.enums.ReportReason;
 import com.shxtnyra.forum.service.CommentService;
 import com.shxtnyra.forum.service.PostService;
+import com.shxtnyra.forum.service.ReportService;
 import com.shxtnyra.forum.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +27,7 @@ public class AdministrationController {
     private final TopicService topicService;
     private final PostService postService;
     private final CommentService commentService;
+    private final ReportService reportService;
 
     // === Topic Management ===
     @PreAuthorize("hasAnyRole('ADMIN')")
@@ -57,9 +62,23 @@ public class AdministrationController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @GetMapping("/users/{userId}/posts/deleted")
-    public ResponseEntity<Slice<PostShortDTO>> getDeletedPostsByUser(@PathVariable Long userId,
-                                                                     @PageableDefault Pageable pageable) {
+    public ResponseEntity<Page<PostShortDTO>> getDeletedPostsByUser(@PathVariable Long userId,
+                                                                    @PageableDefault Pageable pageable) {
         return ResponseEntity.ok(postService.getDeletedPostsByUser(userId, pageable));
+    }
+
+    /// Получить все жалобы от одного пользователя
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/users/{userId}/reports")
+    public ResponseEntity<ReportUserDTO> getAllReportsByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(reportService.getAllReportsByUserId(userId));
+    }
+
+    /// Получить все жалобы на одного пользователя
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/users/reports/{userId}")
+    public ResponseEntity<ReportUserDTO> getAllReportsByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(reportService.getAllReportsOnUserById(userId));
     }
 
     // Получить все скрытые посты
@@ -93,9 +112,51 @@ public class AdministrationController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/posts/reports")
+    public ResponseEntity<Page<ReportPostDTO>> getAllPostReports(@PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(reportService.getAllPostReports(pageable));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/posts/{postId}/reports")
+    public ResponseEntity<ReportPostDTO> getAllPostReportsByPost(@PathVariable Long postId) {
+        return ResponseEntity.ok(reportService.getAllPostReportsByPost(postId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @PatchMapping("/posts/{postId}/reports")
+    public ResponseEntity<Void> changePostReportStatus(@PathVariable Long postId,
+                                                       @RequestParam ReportReason reportReason,
+                                                       @RequestParam boolean newStatus) {
+        reportService.changePostReportStatus(postId, reportReason, newStatus);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/comments/reports")
+    public ResponseEntity<Page<ReportCommentDTO>> getAllCommentReports(@PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(reportService.getAllCommentReports(null, pageable));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @GetMapping("/posts/{postId}/comments/reports")
+    public ResponseEntity<Page<ReportCommentDTO>> getAllCommentReportsByPost(@PathVariable Long postId,
+                                                                             @PageableDefault Pageable pageable) {
+        return ResponseEntity.ok(reportService.getAllCommentReports(postId, pageable));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
+    @PatchMapping("/comments/{commentId}/reports")
+    public ResponseEntity<Void> changeCommentReportStatus(@PathVariable Long commentId,
+                                                          @RequestParam ReportReason reportReason,
+                                                          @RequestParam boolean newStatus) {
+        reportService.changeCommentReportStatus(commentId, reportReason, newStatus);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
     @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<Void> deleteCommentSoft(
-            @PathVariable Long commentId) {
+    public ResponseEntity<Void> deleteCommentSoft(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();
     }

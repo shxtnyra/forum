@@ -46,20 +46,20 @@ public class PostService {
     }
 
     @Transactional
-    public void editDraft(Long postId, PostCreateDTO createDTO, UserEntity user) {
+    public PostDetailsDTO editDraft(Long postId, PostCreateDTO createDTO, UserEntity user) {
         PostEntity post = postRepository.findById(postId)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         if (!post.isDraft()) {
-            throw new IllegalStateException("Post already released");
+            throw new IllegalStateException("Нельзя редактировать этот пост");
         }
 
         if (!post.getAuthor().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException("Нельзя редактировать этот пост");
         }
 
         if (post.isDeleted()) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException("Нельзя редактировать этот пост");
         }
 
         TopicEntity topic = topicRepository.findById(createDTO.getTopicId())
@@ -68,17 +68,20 @@ public class PostService {
         post.setTitle(createDTO.getTitle());
         post.setContent(createDTO.getContent());
         post.setTopic(topic);
+        post.setUpdatedAt(LocalDateTime.now());
+
+        return PostMapper.toDetailsDTO(post);
     }
 
     // получение поста
     @Transactional
     public PostDetailsDTO getPostById(Long id, UserEntity user) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         if (post.isInvisible()) {
             if (user.getRole() == Role.ROLE_USER) {
-                throw new AccessDeniedException("Access denied");
+                throw new AccessDeniedException("Нельзя получить этот пост");
             }
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
@@ -86,7 +89,7 @@ public class PostService {
 
         if (post.isDeleted()) {
             if (user.getRole() == Role.ROLE_USER) {
-                throw new AccessDeniedException("Access denied");
+                throw new AccessDeniedException("Нельзя получить этот пост");
             }
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
@@ -96,11 +99,11 @@ public class PostService {
         if (post.isDraft()) {
             // Черновики доступны только автору и админам
             if (user.getRole() == Role.ROLE_MODERATOR) {
-                throw new AccessDeniedException("Access denied");
+                throw new AccessDeniedException("Нельзя получить этот пост");
             }
 
             if (!user.getId().equals(post.getAuthor().getId())) {
-                throw new AccessDeniedException("Access denied");
+                throw new AccessDeniedException("Нельзя получить этот пост");
             }
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
@@ -117,7 +120,7 @@ public class PostService {
 
         // Валидация темы
         if (topicSlug != null && !topicRepository.existsBySlug(topicSlug)) {
-            throw new IllegalArgumentException("Topic not found");
+            throw new IllegalArgumentException("Такая тема не найдена");
         }
 
         // Определяем период
@@ -127,7 +130,7 @@ public class PostService {
                 case "day" -> LocalDateTime.now().minusDays(1);
                 case "week" -> LocalDateTime.now().minusWeeks(1);
                 case "month" -> LocalDateTime.now().minusMonths(1);
-                default -> throw new IllegalArgumentException("Invalid period");
+                default -> throw new IllegalArgumentException("Неверный период");
             };
         }
 
@@ -135,7 +138,7 @@ public class PostService {
         if (topicSlug != null) {
             topicId = topicRepository.findIdBySlug(topicSlug);
             if (topicId == null) {
-                throw new IllegalArgumentException("Topic not found");
+                throw new IllegalArgumentException("Такая тема не найдена");
             }
         }
 
@@ -166,7 +169,7 @@ public class PostService {
     // Получить посты одного пользователя (простые посты либо вместе со скрытыми)
     public Page<PostShortDTO> getPostsByUserByVisibility(Long userId, boolean includeInvisible, Pageable pageable) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("User not found");
+            throw new EntityNotFoundException("Пользователь не найден");
         }
 
         return postRepository.getPostsByUserByVisibility(userId, includeInvisible, pageable).map(PostMapper::toShortDTO);
@@ -176,11 +179,11 @@ public class PostService {
     @Transactional
     public void changeVisibility(Long id, boolean isInvisible) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         // Черновикам нельзя менять видимость
         if (post.isDraft()) {
-            throw new IllegalStateException("Access denied");
+            throw new IllegalStateException("Нельзя изменить этот пост");
         }
 
         post.setInvisible(isInvisible);
@@ -190,7 +193,7 @@ public class PostService {
     @Transactional
     public Page<PostShortDTO> getDeletedPostsByUser(Long authorId, Pageable pageable) {
         if (!userRepository.existsById(authorId)) {
-            throw new EntityNotFoundException("User not found");
+            throw new EntityNotFoundException("Пользователь не найден");
         }
 
         return postRepository.getDeletedPostsByUser(authorId, pageable).map(PostMapper::toShortDTO);
@@ -200,7 +203,7 @@ public class PostService {
     @Transactional
     public void deletePost(Long id) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         // Если уже удален
         if (post.isDeleted()) {
@@ -214,7 +217,7 @@ public class PostService {
     @Transactional
     public void recoverPost(Long id) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         // Если уже восстановлен
         if (!post.isDeleted()) {
@@ -228,16 +231,16 @@ public class PostService {
     @Transactional
     public PostDetailsDTO releasePost(Long id, UserEntity user) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         // Выложить может только автор
         if (!post.getAuthor().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException("Нельзя выложить этот пост");
         }
 
         // Нельзя выложить удаленное
         if (post.isDeleted()) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException("Нельзя выложить этот пост");
         }
 
         // Если уже выложен
@@ -260,7 +263,7 @@ public class PostService {
     // Получить чужие черновики (для админов)
     public Page<PostShortDTO> getDraftsByUserId(Long userId, Pageable pageable) {
         if (!userRepository.existsById(userId)) {
-            throw new EntityNotFoundException("User not found");
+            throw new EntityNotFoundException("Пользователь не найден");
         }
 
         return postRepository.getDraftsByUserId(userId, pageable).map(PostMapper::toShortDTO);
@@ -270,7 +273,7 @@ public class PostService {
     @Transactional
     public PostDetailsDTO updatePost(Long id, PostCreateDTO dto) {
         PostEntity post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());

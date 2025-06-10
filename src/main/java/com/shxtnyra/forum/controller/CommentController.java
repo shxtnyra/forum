@@ -3,8 +3,11 @@ package com.shxtnyra.forum.controller;
 import com.shxtnyra.forum.dto.comment.CommentCreateDTO;
 import com.shxtnyra.forum.dto.comment.CommentDetailsDTO;
 import com.shxtnyra.forum.dto.comment.CommentShortDTO;
+import com.shxtnyra.forum.dto.report.ReportCreateDTO;
+import com.shxtnyra.forum.dto.report.ReportDetailsDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.service.CommentService;
+import com.shxtnyra.forum.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentService commentService;
+    private final ReportService reportService;
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
@@ -51,4 +55,9 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getCommentById(commentId, user));
     }
 
+    @PostMapping("/{commentId}/reports")
+    public ResponseEntity<ReportDetailsDTO> createReport(@RequestBody @Valid ReportCreateDTO createDTO,
+                                                         @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(reportService.createReport(createDTO, user));
+    }
 }

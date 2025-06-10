@@ -9,6 +9,7 @@ CREATE TABLE comments (
     level INTEGER NOT NULL DEFAULT 0,
     like_count INTEGER NOT NULL DEFAULT 0 CHECK (like_count >= 0),
     dislike_count INTEGER NOT NULL DEFAULT 0 CHECK (dislike_count >= 0),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
     -- Ограничения
     CONSTRAINT chk_comment_level CHECK (level BETWEEN 0 AND 10) -- Защита от бесконечной вложенности

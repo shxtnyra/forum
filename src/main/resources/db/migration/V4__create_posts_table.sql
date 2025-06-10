@@ -10,6 +10,9 @@ CREATE TABLE posts (
     view_count INTEGER NOT NULL DEFAULT 0,
     like_count INTEGER NOT NULL DEFAULT 0,
     dislike_count INTEGER NOT NULL DEFAULT 0,
+    invisible BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    draft BOOLEAN NOT NULL DEFAULT TRUE,
 
     -- Ограничения
     CONSTRAINT chk_posts_view_count CHECK (view_count >= 0),

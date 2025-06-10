@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class EmailService implements EmailSender {
-    private final static Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
 
     /**
@@ -35,8 +34,7 @@ public class EmailService implements EmailSender {
             helper.setFrom("superPuperTest@fractal.ru");
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
-            LOGGER.error("failed to send email", e);
-            throw new IllegalStateException("failed to send email");
+            throw new IllegalStateException("Не удалось отправить письмо");
         }
     }
 
