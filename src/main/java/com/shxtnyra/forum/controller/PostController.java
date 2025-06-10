@@ -46,7 +46,7 @@ public class PostController {
     @PatchMapping("/drafts/{id}/release")
     public ResponseEntity<PostDetailsDTO> releasePost(@PathVariable Long id,
                                                       @AuthenticationPrincipal UserEntity user) {
-        ;
+
         return ResponseEntity.ok(postService.releasePost(id, user));
     }
 
