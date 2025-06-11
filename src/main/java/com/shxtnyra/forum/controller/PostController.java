@@ -3,8 +3,11 @@ package com.shxtnyra.forum.controller;
 import com.shxtnyra.forum.dto.post.PostCreateDTO;
 import com.shxtnyra.forum.dto.post.PostDetailsDTO;
 import com.shxtnyra.forum.dto.post.PostShortDTO;
+import com.shxtnyra.forum.dto.report.ReportCreateDTO;
+import com.shxtnyra.forum.dto.report.ReportDetailsDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.service.PostService;
+import com.shxtnyra.forum.service.ReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final ReportService reportService;
 
     @PostMapping("/drafts")
     @PreAuthorize("isAuthenticated()")
@@ -33,17 +37,16 @@ public class PostController {
     }
 
     @PatchMapping("/drafts/{id}")
-    public ResponseEntity<Void> editDraft(@PathVariable Long id,
+    public ResponseEntity<PostDetailsDTO> editDraft(@PathVariable Long id,
                                           @RequestBody @Valid PostCreateDTO dto,
                                           @AuthenticationPrincipal UserEntity user) {
-        postService.editDraft(id, dto, user);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(postService.editDraft(id, dto, user));
     }
 
     @PatchMapping("/drafts/{id}/release")
     public ResponseEntity<PostDetailsDTO> releasePost(@PathVariable Long id,
                                                       @AuthenticationPrincipal UserEntity user) {
-        ;
+
         return ResponseEntity.ok(postService.releasePost(id, user));
     }
 
@@ -81,5 +84,11 @@ public class PostController {
         }
 
         return ResponseEntity.ok(postService.getNewsFeed(lastSeenId, topic, period, sort, limit));
+    }
+
+    @PostMapping("/{postId}/reports")
+    public ResponseEntity<ReportDetailsDTO> createReport(@RequestBody @Valid ReportCreateDTO createDTO,
+                                                         @AuthenticationPrincipal UserEntity user) {
+        return ResponseEntity.ok(reportService.createReport(createDTO, user));
     }
 }

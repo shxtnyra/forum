@@ -47,7 +47,7 @@ public class AuthService {
     public AuthResponseDTO refreshToken(String refreshToken){
         RefreshTokenEntity oldRefreshToken = refreshTokenRepository
                 .findByToken(refreshToken)
-                .orElseThrow(() -> new EntityNotFoundException("RefreshToken not found: " + refreshToken));
+                .orElseThrow(() -> new EntityNotFoundException("Refresh токен не найден: " + refreshToken));
 
         verifyExpirationRefreshToken(oldRefreshToken);
 
@@ -80,7 +80,7 @@ public class AuthService {
     private void verifyExpirationRefreshToken(RefreshTokenEntity refreshToken) {
         if (Instant.now().isAfter(refreshToken.getExpiryDate())) {
             refreshTokenRepository.delete(refreshToken);
-            throw new JwtException("Refresh token expired");
+            throw new JwtException("Refresh токен истёк");
         }
     }
 

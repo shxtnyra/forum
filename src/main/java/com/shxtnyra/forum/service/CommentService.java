@@ -31,7 +31,7 @@ public class CommentService {
     @Transactional
     public CommentShortDTO createComment(CommentCreateDTO createDTO, UserEntity user) {
         if (!postRepository.existsById(createDTO.getPostId()))
-            throw new EntityNotFoundException("такого поста нету");
+            throw new EntityNotFoundException("Пост не найден");
 
         // Если пост или удален, или скрыт, или черновик
         if (postRepository.hasAnyFlagById(createDTO.getPostId())) {
@@ -44,7 +44,7 @@ public class CommentService {
         if (createDTO.getParentId() != null) {
             // Используем проекцию что бы не подтянуть лишнего
             CommentRepository.ParentInfo parentInfo = commentRepository.findParentInfoById(createDTO.getParentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Такого комментария нету"));
+                    .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
             if (!createDTO.getPostId().equals(parentInfo.getPostId()))
                 throw new IllegalArgumentException("Указанный пост и пост комментария для ответа расходятся");
@@ -111,7 +111,7 @@ public class CommentService {
 
     public List<CommentShortDTO> getCommentsByParent(Long parentId, UserEntity user) {
         CommentEntity comment = commentRepository.findById(parentId)
-                .orElseThrow(() -> new EntityNotFoundException("Нету такого коммента"));
+                .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
 
         // Если пост или удален, или скрыт, или черновик
         if (postRepository.hasAnyFlagById(commentRepository.findPostByCommentId(parentId))) {

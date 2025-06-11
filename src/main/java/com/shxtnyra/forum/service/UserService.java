@@ -43,7 +43,7 @@ public class UserService implements UserDetailsService {
         userRepository.findByUsername(request.getUsername())
                 .ifPresent(userEntity -> {
                     if (!userEntity.getEmail().equals(request.getEmail())) {
-                        throw new IllegalArgumentException("Username already exists");
+                        throw new IllegalArgumentException("Имя пользователя занято");
                     }
                 });
 
@@ -53,7 +53,7 @@ public class UserService implements UserDetailsService {
 
             // Если уже подтвержденный
             if (existingUser.isConfirmed()) {
-                throw new IllegalArgumentException("Email already exists");
+                throw new IllegalArgumentException("Такая почта уже используется");
             }
 
             // TODO возможно нужно что-то с паролем делать
@@ -66,7 +66,7 @@ public class UserService implements UserDetailsService {
                 return UserMapper.toDetailsDTO(existingUser);
             }
 
-            throw new IllegalArgumentException("Email already exists");
+            throw new IllegalArgumentException("Такая почта уже используется");
         }
 
         UserEntity user = UserEntity.builder()
@@ -105,14 +105,14 @@ public class UserService implements UserDetailsService {
     public ConfirmationTokenDetailsDTO confirmToken(String token) {
         ConfirmationTokenEntity confirmationToken = confirmationTokenRepository
                 .findByToken(token)
-                .orElseThrow(() -> new EntityNotFoundException("token not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Токен не найден"));
 
         if (confirmationToken.getConfirmedAt() != null) {
-            throw new IllegalArgumentException("email already confirmed");
+            throw new IllegalArgumentException("Почта уже подтверждена");
         }
 
         if (confirmationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("token expired");
+            throw new IllegalArgumentException("Токен истёк");
         }
 
         // Ставим токен активированным и активируем аккаунт
@@ -125,7 +125,7 @@ public class UserService implements UserDetailsService {
     public UserDetailsDTO getUserById(Long id) {
         System.out.println("Попал в сервис getUserById");
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
         return UserMapper.toDetailsDTO(user);
     }
 
@@ -142,7 +142,7 @@ public class UserService implements UserDetailsService {
                 .map(UserMapper::toShortDTO);
     }
 
-    public List<UserShortDTO> getTopRatingUsers(){
+    public List<UserShortDTO> getTopRatingUsers() {
         return userRepository.findTop50ByOrderByTotalRatingDesc()
                 .stream()
                 .map(UserMapper::toShortDTO)
@@ -160,11 +160,11 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDetailsDTO updateUser(Long id, UserDetailsDTO dto) {
         UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
 
         if (dto.getNickname() != null && !dto.getNickname().equals(user.getNickname())) {
             if (userRepository.existsByNickname(dto.getNickname())) {
-                throw new IllegalArgumentException("Username already exists");
+                throw new IllegalArgumentException("Имя пользователя занято");
             }
             user.setNickname(dto.getNickname());
         }
@@ -180,7 +180,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found with id: " + id);
+            throw new EntityNotFoundException("Пользователь не найден");
         }
         userRepository.deleteById(id);
     }
@@ -188,6 +188,6 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
     }
 }
