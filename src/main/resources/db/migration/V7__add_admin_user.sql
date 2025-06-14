@@ -10,7 +10,7 @@ INSERT INTO users (
 ) VALUES (
     'admin',
     'admin@example.com',
-    '$2a$10$x5D2rV5z3J5XyYQlT7sZ.e5vUOv5U1wYb6X3dKjvQwLmN1Yb6X3dKj',
+    '$2a$10$x6OArveh./3yAFbSxjoAQ.TikReDXpGjDU7UP9XvmqP0074WLLQb6',
     'ROLE_ADMIN',
     TRUE,
     'System Administrator',

@@ -1,17 +1,16 @@
 package com.shxtnyra.forum.controller;
 
-import com.shxtnyra.forum.dto.comment.CommentDetailsDTO;
 import com.shxtnyra.forum.dto.comment.CommentShortDTO;
 import com.shxtnyra.forum.dto.user.UserShortDTO;
 import com.shxtnyra.forum.dto.user.UserDetailsDTO;
+import com.shxtnyra.forum.dto.post.PostShortDTO;
 import com.shxtnyra.forum.entity.UserEntity;
 import com.shxtnyra.forum.exception.exceptions.EntityNotFoundException;
-import com.shxtnyra.forum.exception.exceptions.ValidationException;
 import com.shxtnyra.forum.mapper.UserMapper;
 import com.shxtnyra.forum.service.AuthService;
 import com.shxtnyra.forum.service.CommentService;
-import com.shxtnyra.forum.service.UserRatingService;
 import com.shxtnyra.forum.service.UserService;
+import com.shxtnyra.forum.service.PostService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.method.P;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,17 +35,7 @@ public class UserController {
     private final UserService userService;
     private final AuthService authService;
     private final CommentService commentService;
-
-    /**
-     * Получить список всех пользователей в виде List (без пагинации).
-     * Используется для выпадающих списков и других сценариев, где нужен полный перечень.
-     *
-     * @return List<UserShortDTO> список пользователей в сокращенном формате
-     */
-    @GetMapping("/list")
-    public ResponseEntity<List<UserShortDTO>> getAllUsersList() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
+    private final PostService postService;
 
     /**
      * Получить страницу пользователей с пагинацией.
@@ -78,10 +66,29 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    /**
+     * Получить комментарии пользователя по id.
+     *
+     * @param id идентификатор пользователя
+     * @param pageable параметры пагинации
+     * @return Page<CommentShortDTO> страница комментариев пользователя
+     */
     @GetMapping("/{userId}/comments")
     public ResponseEntity<Page<CommentShortDTO>> getCommentsByUser(@PathVariable Long id,
                                                                    @PageableDefault Pageable pageable) {
-        return ResponseEntity.ok(commentService.getCommentsByAuthor(id, pageable));
+        return ResponseEntity.ok(commentService.getCommentsByAuthorByVisibility(id, false, pageable));
+    }
+
+    /**
+     * Получить посты пользователя по id.
+     *
+     * @param id идентификатор пользователя
+     * @param pageable параметры пагинации
+     * @return Page<PostShortDTO> страница постов пользователя
+     */
+    @GetMapping("/{id}/posts")
+    public ResponseEntity<Page<PostShortDTO>> getPostsByUserId(@PathVariable Long id, Pageable pageable) {
+        return ResponseEntity.ok(postService.getPostsByUserByVisibility(id, false, pageable));
     }
 
     /**
@@ -100,11 +107,11 @@ public class UserController {
     /**
      * Получить профиль текущего аутентифицированного пользователя.
      *
-     * @param currentUser автоматически внедряемый объект пользователя из контекста безопасности
+     * @param currentUser объект пользователя из контекста безопасности
      * @return UserDetailsDTO полные данные профиля
-     * @throws AuthenticationException если пользователь не аутентифицирован
      */
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDetailsDTO> getMyProfile(
             @AuthenticationPrincipal UserEntity currentUser) {
         return ResponseEntity.ok(UserMapper.toDetailsDTO(currentUser));
@@ -116,11 +123,11 @@ public class UserController {
      * @param updateDto DTO с обновляемыми полями
      * @param currentUser аутентифицированный пользователь
      * @return UserDetailsDTO обновленный профиль
-     * @throws ValidationException при невалидных данных
      * @implNote Поддерживает частичное обновление через PATCH.
      *           Нельзя изменить email и username после регистрации.
      */
     @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDetailsDTO> updateMyProfile(
             @Valid @RequestBody UserDetailsDTO updateDto,
             @AuthenticationPrincipal UserEntity currentUser) {
@@ -138,6 +145,7 @@ public class UserController {
      *           Для полного удаления требуется роль ADMIN.
      */
     @DeleteMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> deleteMyAccount(
             @AuthenticationPrincipal UserEntity currentUser) {
         authService.deleteRefreshTokenByUser(currentUser.getId());

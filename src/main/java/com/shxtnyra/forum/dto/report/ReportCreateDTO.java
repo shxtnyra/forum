@@ -10,6 +10,4 @@ import lombok.Data;
 public class ReportCreateDTO {
     @NotNull
     private final ReportReason reason;
-    private final Long postId;
-    private final Long commentId;
 }

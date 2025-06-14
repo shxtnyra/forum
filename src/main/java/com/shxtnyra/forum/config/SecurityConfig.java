@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class  SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -47,31 +49,6 @@ public class  SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/auth/**").permitAll()
-                        // Users
-                        .requestMatchers(
-                                "/v1/users/me**"  // Все /me/... пути требуют авторизации
-                        ).authenticated()
-                        .requestMatchers(
-                                "/v1/users/list",
-                                "/v1/users",
-                                "/v1/users/{id}",
-                                "/v1/users/find"
-                        ).permitAll()
-
-                        // Test
-                        .requestMatchers("/v1/test/public").permitAll()
-                        .requestMatchers("v1/test/authenticated").authenticated()
-                        .requestMatchers("/v1/test/moderator").hasRole("MODERATOR")
-
-                        .requestMatchers(HttpMethod.GET, "/v1/posts/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/posts").hasAnyRole("USER", "MODERATOR", "ADMIN")
-
-                        .requestMatchers(HttpMethod.GET, "/v1/comments/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/v1/comments/add").authenticated()
-
-                        .requestMatchers("/v1/administration/**").hasAnyRole("ADMIN", "MODERATOR")
-                        .requestMatchers("/v1/moderation/**").hasAnyRole("MODERATOR", "ADMIN")
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

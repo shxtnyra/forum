@@ -30,12 +30,8 @@ public class PostRatingService {
 
         Long authorId = post.getAuthor().getId();
 
-        if (user.getId().equals(authorId)) {
-            throw new IllegalStateException("Нельзя оценивать себя");
-        }
-
         if (post.isInvisible() || post.isDraft() || post.isDeleted()) {
-            throw new IllegalStateException("Нельзя оценить этот пост");
+            throw new IllegalArgumentException("Нельзя оценить этот пост");
         }
 
         postRatingRepository.findByPostIdAndUserId(postId, user.getId()).ifPresentOrElse(

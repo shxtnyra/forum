@@ -32,43 +32,8 @@ public class ReportService {
     private final UserRepository userRepository;
 
     @Transactional
-    public ReportDetailsDTO createReport(ReportCreateDTO createDTO, UserEntity user) {
-        // Если жалоба на комментарий
-        if (createDTO.getCommentId() != null) {
-            CommentEntity comment = commentRepository.findById(createDTO.getCommentId())
-                    .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
-
-            if (comment.isDeleted()) {
-                throw new AccessDeniedException("Нельзя пожаловаться на этот комментарий");
-            }
-
-            if (comment.getAuthor().getId().equals(user.getId())) {
-                throw new AccessDeniedException("Нельзя пожаловаться на свой комментарий");
-            }
-
-            // Если этот пользователь уже отсылал такую жалобу
-            if (reportRepository.getExistingCommentReportByUserAndReason(user.getId(),
-                    createDTO.getReason(),
-                    createDTO.getCommentId()).isPresent()) {
-                throw new IllegalStateException("Нельзя отправить более одной одинаковой жалобы на комментарий");
-            }
-
-            ReportEntity report = ReportEntity.builder()
-                    .comment(comment)
-                    .reason(createDTO.getReason())
-                    .author(user)
-                    .build();
-            report = reportRepository.save(report);
-
-            return ReportMapper.toDetailsDTO(report);
-        }
-
-        if (createDTO.getPostId() == null) {
-            throw new IllegalArgumentException("Нельзя пожаловаться ни на что");
-        }
-
-        // Если на пост
-        PostEntity post = postRepository.findById(createDTO.getPostId())
+    public ReportDetailsDTO createReportOnPost(Long postId, ReportCreateDTO createDTO, UserEntity user) {
+        PostEntity post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         if (post.isDraft() || post.isDeleted() || post.isInvisible()) {
@@ -79,20 +44,46 @@ public class ReportService {
             throw new AccessDeniedException("Нельзя пожаловаться на свой пост");
         }
 
-        // Если этот пользователь уже отсылал такую жалобу
         if (reportRepository.getExistingPostReportByUserAndReason(user.getId(),
                 createDTO.getReason(),
-                createDTO.getPostId()).isPresent()) {
+                postId).isPresent()) {
             throw new IllegalStateException("Нельзя отправить более одной одинаковой жалобы на пост");
         }
-
         ReportEntity report = ReportEntity.builder()
                 .post(post)
                 .reason(createDTO.getReason())
                 .author(user)
                 .build();
         report = reportRepository.save(report);
+        return ReportMapper.toDetailsDTO(report);
+    }
 
+    @Transactional
+    public ReportDetailsDTO createReportOnComment(Long commentId, ReportCreateDTO createDTO, UserEntity user) {
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Комментарий не найден"));
+
+        if (comment.isDeleted()) {
+            throw new AccessDeniedException("Нельзя пожаловаться на этот комментарий");
+        }
+
+        if (comment.getAuthor().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Нельзя пожаловаться на свой комментарий");
+        }
+
+        if (reportRepository.getExistingCommentReportByUserAndReason(user.getId(),
+                createDTO.getReason(),
+                commentId).isPresent()) {
+            throw new IllegalStateException("Нельзя отправить более одной одинаковой жалобы на комментарий");
+        }
+
+        ReportEntity report = ReportEntity.builder()
+                .comment(comment)
+                .reason(createDTO.getReason())
+                .author(user)
+                .build();
+                
+        report = reportRepository.save(report);
         return ReportMapper.toDetailsDTO(report);
     }
 

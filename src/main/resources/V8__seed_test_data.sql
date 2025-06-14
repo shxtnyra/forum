@@ -26,7 +26,7 @@ BEGIN
         ) VALUES (
             'user_' || i,
             'user_' || i || '@example.com',
-            '$2a$10$N9qo8uLOickgx2ZMRZoMy.MQD/.G8L33E8LZnX3hEm6sZHCc8ag8u', -- password: user123
+            '$2a$10$Nsi6XvXvQNjEMZBMjtsmSu34XUvBv3SpTV69H041PPTyTL47FT9Ni', -- password: user123
             TRUE,
             CASE
                 WHEN i % 5 = 0 THEN 'Опытный разработчик'

@@ -98,6 +98,8 @@ public class CommentService {
 
         // Если пост или удален, или скрыт, или черновик, то доступно только для админов и модераторов
         if (postRepository.hasAnyFlagById(postId)) {
+            if (user == null)
+                throw new AccessDeniedException("Нельзя получить комментарии");
             if (user.getRole() == Role.ROLE_USER) {
                 throw new AccessDeniedException("Нельзя получить комментарии");
             }

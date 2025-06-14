@@ -31,10 +31,6 @@ public class CommentRatingService {
         Long authorId = commentRepository.findAuthorIdById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Такой комментарий не найден"));
 
-        if (user.getId().equals(authorId)) {
-            throw new IllegalStateException("Нельзя оценивать себя");
-        }
-
         if (postRepository.hasAnyFlagById(commentRepository.findPostByCommentId(commentId))) {
             throw new AccessDeniedException("Нельзя оценить этот комментарий");
         }

@@ -55,7 +55,7 @@ BEGIN
             ) VALUES (
                 v_username,
                 v_email,
-                '$2a$10$N9qo8uLOickgx2ZMRZoMy.MQD/.G8L33E8LZnX3hEm6sZHCc8ag8u', -- password: user123
+                '$2a$10$Nsi6XvXvQNjEMZBMjtsmSu34XUvBv3SpTV69H041PPTyTL47FT9Ni', -- password: user123
                 random() > 0.1, -- 90% подтвержденных
                 v_description,
                 NOW() - (i * INTERVAL '1 day') - (random() * INTERVAL '365 days'),

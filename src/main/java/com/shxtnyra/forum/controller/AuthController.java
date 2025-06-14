@@ -19,26 +19,56 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
+    /**
+     * Регистрация нового пользователя.
+     *
+     * @param dto DTO с регистрационными данными (username, email, password и др.)
+     * @return UserDetailsDTO данные созданного пользователя
+     */
     @PostMapping("/register")
     public ResponseEntity<UserDetailsDTO> register(@RequestBody RegisterRequestDTO dto) {
         return ResponseEntity.ok(userService.createUser(dto));
     }
 
+    /**
+     * Подтверждение email пользователя по токену.
+     *
+     * @param token токен подтверждения, отправленный на email
+     * @return ConfirmationTokenDetailsDTO информация о подтверждении
+     */
     @GetMapping("/confirm")
     public ResponseEntity<ConfirmationTokenDetailsDTO> confirm(@RequestParam("token") String token) {
         return ResponseEntity.ok(userService.confirmToken(token));
     }
 
+    /**
+     * Аутентификация пользователя (логин).
+     *
+     * @param dto DTO с логином/email и паролем
+     * @return AuthResponseDTO access и refresh токены
+     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO dto) {
         return ResponseEntity.ok(authService.authenticate(dto.getLoginOrEmail(), dto.getPassword()));
     }
 
+    /**
+     * Обновление access токена по refresh токена.
+     *
+     * @param request DTO с refresh токеном
+     * @return AuthResponseDTO новые access и refresh токены
+     */
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponseDTO> refresh(@RequestBody RefreshTokenRequestDTO request){
         return ResponseEntity.ok(authService.refreshToken(request.getRefreshToken()));
     }
 
+    /**
+     * Выход пользователя (инвалидация refresh токена).
+     *
+     * @param request DTO с refresh токеном
+     * @return HTTP 204 No Content при успешном выходе
+     */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequestDTO request) {
         authService.logout(request.getRefreshToken());

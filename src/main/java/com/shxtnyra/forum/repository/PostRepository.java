@@ -22,6 +22,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             AND p.deleted = false
             AND p.draft = false
             ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC
+            LIMIT :limit
             """)
     Slice<PostEntity> findTopPostsByPeriod(
             @Param("lastSeenId") Long lastSeenId,
@@ -39,6 +40,7 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             AND p.deleted = false
             AND p.draft = false
             ORDER BY (p.likeCount + p.dislikeCount) DESC, p.id DESC
+            LIMIT :limit
             """)
     Slice<PostEntity> findTopPostsByPeriodAndTopic(
             @Param("lastSeenId") Long lastSeenId,
@@ -51,13 +53,16 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
     @Query("""
             SELECT p FROM PostEntity p
             WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
+            AND p.createdAt >= :periodStart
             AND p.invisible = false
             AND p.deleted = false
             AND p.draft = false
             ORDER BY p.id DESC
+            LIMIT :limit
             """)
     Slice<PostEntity> findNewestPosts(
             @Param("lastSeenId") Long lastSeenId,
+            @Param("periodStart") LocalDateTime periodStart,
             @Param("limit") int limit
     );
 
@@ -66,13 +71,16 @@ public interface PostRepository extends JpaRepository<PostEntity, Long> {
             SELECT p FROM PostEntity p
             WHERE (:lastSeenId IS NULL OR p.id < :lastSeenId)
             AND p.topic.id = :topicId
+            AND p.createdAt >= :periodStart
             AND p.invisible = false
             AND p.deleted = false
             AND p.draft = false
             ORDER BY p.id DESC
+            LIMIT :limit
             """)
     Slice<PostEntity> findNewestPostsByTopic(
             @Param("lastSeenId") Long lastSeenId,
+            @Param("periodStart") LocalDateTime periodStart,
             @Param("topicId") Long topicId,
             @Param("limit") int limit
     );

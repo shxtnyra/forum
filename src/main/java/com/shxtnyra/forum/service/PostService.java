@@ -80,31 +80,43 @@ public class PostService {
                 .orElseThrow(() -> new EntityNotFoundException("Пост не найден"));
 
         if (post.isInvisible()) {
+            // Если пользователь не авторизован, то нельзя получить скрытый пост
+            if (user == null)
+                throw new AccessDeniedException("Нельзя получить этот пост");
+
             if (user.getRole() == Role.ROLE_USER) {
                 throw new AccessDeniedException("Нельзя получить этот пост");
             }
+
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
         }
 
         if (post.isDeleted()) {
+            if (user == null)
+                throw new AccessDeniedException("Нельзя получить этот пост");
+
             if (user.getRole() == Role.ROLE_USER) {
                 throw new AccessDeniedException("Нельзя получить этот пост");
             }
+
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
         }
 
         // Если пост еще черновик
         if (post.isDraft()) {
-            // Черновики доступны только автору и админам
-            if (user.getRole() == Role.ROLE_MODERATOR) {
+            // Если пользователь не авторизован, то нельзя получить черновик
+            if (user == null)
                 throw new AccessDeniedException("Нельзя получить этот пост");
-            }
 
+            // Если пользователь это не автор поста
             if (!user.getId().equals(post.getAuthor().getId())) {
-                throw new AccessDeniedException("Нельзя получить этот пост");
+            // Если пользователь не админ или модератор 
+                if (user.getRole() == Role.ROLE_USER) 
+                    throw new AccessDeniedException("Нельзя получить этот пост");
             }
+            
             // Возвращаем без увеличения просмотров
             return PostMapper.toDetailsDTO(post);
         }
@@ -130,6 +142,8 @@ public class PostService {
                 case "day" -> LocalDateTime.now().minusDays(1);
                 case "week" -> LocalDateTime.now().minusWeeks(1);
                 case "month" -> LocalDateTime.now().minusMonths(1);
+                case "year" -> LocalDateTime.now().minusYears(1);
+                case "all" -> LocalDateTime.of(2000, 1, 1, 0, 0);
                 default -> throw new IllegalArgumentException("Неверный период");
             };
         }
@@ -148,13 +162,13 @@ public class PostService {
             if ("top".equals(sort)) {
                 posts = postRepository.findTopPostsByPeriodAndTopic(lastSeenId, periodStart, topicId, limit);
             } else {
-                posts = postRepository.findNewestPostsByTopic(lastSeenId, topicId, limit);
+                posts = postRepository.findNewestPostsByTopic(lastSeenId, periodStart, topicId, limit);
             }
         } else {
             if ("top".equals(sort)) {
                 posts = postRepository.findTopPostsByPeriod(lastSeenId, periodStart, limit);
             } else {
-                posts = postRepository.findNewestPosts(lastSeenId, limit);
+                posts = postRepository.findNewestPosts(lastSeenId, periodStart, limit);
             }
         }
 

@@ -12,17 +12,32 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Контроллер для работы с темами.
+ * Предоставляет API для получения тем.
+ */
 @RestController
 @RequestMapping("/v1/topics")
 @RequiredArgsConstructor
 public class TopicController {
     private final TopicService topicService;
 
+    /**
+     * Получить подробную информацию о теме по slug.
+     *
+     * @param slug уникальный идентификатор темы (slug)
+     * @return TopicDetailsDTO подробная информация о теме
+     */
     @GetMapping("/{slug}")
     public ResponseEntity<TopicDetailsDTO> getTopic(@PathVariable String slug) {
         return ResponseEntity.ok(topicService.getTopicBySlug(slug));
-    }
+    }   
 
+    /**
+     * Получить список всех тем (короткая информация).
+     *
+     * @return List<TopicShortDTO> список всех тем
+     */
     @GetMapping
     public ResponseEntity<List<TopicShortDTO>> getAllTopics() {
         return ResponseEntity.ok(topicService.getAllTopics());
