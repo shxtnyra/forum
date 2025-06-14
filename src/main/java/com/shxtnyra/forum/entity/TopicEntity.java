@@ -34,16 +34,6 @@ public class TopicEntity {
     @Column(name = "last_modified_at")
     private LocalDateTime lastModifiedAt;
 
-    // Флаги
-    @Column(name = "is_pinned", nullable = false)
-    private boolean pinned = false;
-
-    @Column(name = "is_closed", nullable = false)
-    private boolean closed = false;
-
-    @Column(name = "is_verified", nullable = false)
-    private boolean verified = false;
-
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

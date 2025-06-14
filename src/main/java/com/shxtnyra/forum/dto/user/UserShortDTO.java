@@ -9,5 +9,5 @@ public class UserShortDTO {
     private final Long id;
     private final String nickname;
     private final String avatarUrl;
-    private final int rating;
+    private final double totalRating;
 }

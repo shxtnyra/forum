@@ -21,14 +21,13 @@ public class TopicService {
     @Transactional
     public TopicDetailsDTO createTopic(TopicCreateDTO topicDTO) {
         if (topicRepository.existsBySlug(topicDTO.getSlug())) {
-            throw new IllegalArgumentException("Topic with this nickname already exists");
+            throw new IllegalArgumentException("Тема с таким названием уже существует");
         }
 
         TopicEntity topic = TopicEntity.builder()
                 .name(topicDTO.getName())
                 .slug(topicDTO.getSlug())
                 .description(topicDTO.getDescription())
-                .pinned(false)
                 .build();
 
         topic = topicRepository.save(topic);
@@ -45,20 +44,20 @@ public class TopicService {
 
     public TopicDetailsDTO getTopicById(Long id){
         TopicEntity topic = topicRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Не найдена такая тема"));
+                .orElseThrow(() -> new EntityNotFoundException("Такая тема не найдена"));
         return TopicMapper.toDetailsDTO(topic);
     }
 
     public TopicDetailsDTO getTopicBySlug(String slug) {
         TopicEntity topic = topicRepository.findBySlug(slug)
-                .orElseThrow(() -> new EntityNotFoundException("Не найдена такая тема"));
+                .orElseThrow(() -> new EntityNotFoundException("Такая тема не найдена"));
         return TopicMapper.toDetailsDTO(topic);
     }
 
     @Transactional
     public TopicDetailsDTO updateTopic(Long id, TopicDetailsDTO request) {
         TopicEntity topic = topicRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Topic not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Такая тема не найдена"));
 
         // TODO Исправить логику
 

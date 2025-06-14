@@ -4,8 +4,8 @@ import com.shxtnyra.forum.exception.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,6 +20,18 @@ public class CustomExceptionHandler {
     // Требуется авторизация
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiError> handleNotAuthentication(AuthenticationException e, HttpServletRequest request){
+        ApiError error = new ApiError(
+                "требуется аунтентификация",
+                "UNAUTHORIZED",
+                HttpStatus.UNAUTHORIZED.value(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiError> handleNotAuthentication(AuthorizationDeniedException e, HttpServletRequest request){
         ApiError error = new ApiError(
                 "требуется аунтентификация",
                 "UNAUTHORIZED",
@@ -118,6 +130,16 @@ public class CustomExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(BadCredentialsException e, HttpServletRequest request) {
+        ApiError error = new ApiError(
+                e.getMessage(),
+                "BAD_REQUEST",
+                HttpStatus.CONFLICT.value(),
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
     // Обработка 500 (все остальные ошибки)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAll(Exception e, HttpServletRequest request) {
